@@ -6,7 +6,7 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/06/25 14:48:24 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/09/01 19:44:17 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/09/01 22:38:31 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,92 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <math.h>
+
+typedef struct	s_data {
+	void	*img;
+	char	*addr;
+	int		bits_per_pixel;
+	int		line_length;
+	int		endian;
+}				t_data;
+
+void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
+{
+	char	*dst;
+
+	dst = data->addr + (y * data->line_length + x * (data->bits_per_pixel / 8));
+	*(unsigned int*)dst = color;
+}
+
+void	bresen_test(t_data *img, int x1, int y1, int x2, int y2) {
+	int	dx;
+	int dy;
+	int absdx;
+	int absdy;
+	int d;
+	int i;
+
+	dx = x2 - x1;
+	dy = y2 - y1;
+	if (dx < 0)
+		absdx = -dx;
+	else
+		absdx = dx;
+	if (dy < 0)
+		absdy = -dy;
+	else
+		absdy = dy;
+
+	if (absdx > absdy) { // slope < 1;
+		i = 0;
+		d = 2 * absdy - absdx;
+		while (i < absdx)
+		{
+			if (dx < 0)
+				x1 = x1 - 1;
+			else
+				x1 = x1 + 1;
+			if (d < 0)
+				d = d + 2 * absdy;
+			else
+			{
+				if (dy < 0)
+					y1 = y1 - 1;
+				else
+					y1 = y1 + 1;
+				d = d + (2 * absdy - 2 * absdx);
+			}
+			my_mlx_pixel_put(img, x1, y1, 0x00FF0000);
+			i++;
+		}
+	}
+	else // slope >= 1;
+	{
+		i = 0;
+		d = 2 * absdx - absdy;
+		while (i < absdy)
+		{
+			if (dy < 0)
+				y1 = y1 - 1;
+			else
+				y1 = y1 + 1;
+			if (d < 0)
+				d = d + 2 * absdx;
+			else
+			{
+				if (dx < 0)
+					x1 = x1 - 1;
+				else
+					x1 = x1 + 1;
+				d = d + 2 * absdx - 2 * absdy;
+			}
+			my_mlx_pixel_put(img, x1, y1, 0x00FF0000);
+			i++;
+		}
+	}
+
+}
+
 
 t_vec	*create_frame_new(int x_c, int y_c, int fd)
 {
@@ -45,22 +131,6 @@ t_vec	*create_frame_new(int x_c, int y_c, int fd)
 		line = get_next_line(fd);
 	}
 	return (vec);
-}
-
-typedef struct	s_data {
-	void	*img;
-	char	*addr;
-	int		bits_per_pixel;
-	int		line_length;
-	int		endian;
-}				t_data;
-
-void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
-{
-	char	*dst;
-
-	dst = data->addr + (y * data->line_length + x * (data->bits_per_pixel / 8));
-	*(unsigned int*)dst = color;
 }
 
 void	bresenham_x(t_data *img, int x, int y, int x2, int y2) // if slope < 1;
@@ -176,7 +246,7 @@ void	new_bresen_2(t_data *img, int x1, int y1, int x2, int y2) // if slope > 1;
 
 	while (y1 <= y2)
 	{
-		my_mlx_pixel_put(img, x1, y1, 0xFFFFFF);
+		my_mlx_pixel_put(img, x1, y1, 0x00FF0000);
 		y1++;
 		if (p < 0)
 			p = p + (2 * dy);
@@ -262,51 +332,39 @@ t_vec	*create_frame(int x_c, int y_c, int length, int width)
 
 int	main(int argc, char **argv)
 {
-	// int		fd = open(argv[argc - 1], O_RDONLY);
+	int		fd = open(argv[argc - 1], O_RDONLY);
 	void	*mlx;
 	void	*mlx_win;
 	t_data	img;
 	t_vec	*vec;
 	t_vec	*next_vec;
-
-	argv = NULL;
-	argc = 0;
+	t_vec 	*head;
+	int i = 0;
 
 	mlx = mlx_init();
 	mlx_win = mlx_new_window(mlx, 1920, 1080, "FdF");
 	img.img = mlx_new_image(mlx, 1920, 1080);
 	img.addr = mlx_get_data_addr(img.img, &img.bits_per_pixel, &img.line_length,
 								&img.endian);
-	int x_c = 1920 / 2; // c = center;
+	int x_c = 1920 / 2;
 	int y_c = 1080 / 2;
-	// vec = create_frame_new(x_c, y_c, fd);
-	vec = create_frame(x_c, y_c, 18, 11);
+	vec = create_frame_new(x_c, y_c, fd);
 	lstiter(vec, &rotate, x_c, y_c);
-	// lstiter_rx(vec, &rotate_around_x);
+	lstiter_rx(vec, &rotate_around_x);
+	head = vec;
 	vec = vec->next;
 	next_vec = vec->next;
-	int k = 0;
-	int c = 190;
-	t_vec *test = vec;
 	while (next_vec)
 	{
-		// if ((next_vec->y - vec->y) - (next_vec->x - vec->x) <= 1)
-		// {
-		// 	new_bresen(&img, vec->x, vec->y, next_vec->x, next_vec->y);
-		// }
-		// else
-		// {
-		// 	new_bresen_2(&img, vec->x, vec->y, next_vec->x, next_vec->y);
-		// }
-		my_mlx_pixel_put(&img, vec->x, vec->y, 0x00FF0000);
+		bresen_test(&img, vec->x, vec->y, next_vec->x, next_vec->y);
 		vec = vec->next;
 		next_vec = vec->next;
-		k++;
-		if (k == c)
+		i++;
+		int t = i % 18;
+		if (!t && next_vec != NULL)
 		{
-			bresenham_y_new(&img, vec->x, vec->y, test->x, test->y);
-			test = test->next;
-			c++;
+			vec = vec->next;
+			next_vec = vec->next;
 		}
 	}
 	my_mlx_pixel_put(&img, vec->x, vec->y, 0x00FF0000);

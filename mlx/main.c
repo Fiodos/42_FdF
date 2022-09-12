@@ -6,7 +6,7 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/06/25 14:48:24 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/09/01 22:38:31 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/09/12 17:58:28 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,8 +102,7 @@ void	bresen_test(t_data *img, int x1, int y1, int x2, int y2) {
 
 }
 
-
-t_vec	*create_frame_new(int x_c, int y_c, int fd)
+t_vec	*create_frame_new(int x_c, int y_c, int fd, int *length)
 {
 	t_vec	*vec; //head of the list;
 	char	*line;
@@ -121,158 +120,19 @@ t_vec	*create_frame_new(int x_c, int y_c, int fd)
 		{
 			z = ft_atoi(ps[i]);
 			if (z > 0)
-				z = z + 20;
+				z = z + 10;
+			if (z < 0)
+				z = z - 10;
 			lstadd_back(&vec, new_vec(x_c, y_c, z));
-			x_c += 30;
+			x_c += 10;
 			i++;
 		}
-		x_c = x_c - (i * 30); // set x back to the initial value;
-		y_c += 30;
+		*length = i;
+		x_c = x_c - (i * 10); // set x back to the initial value;
+		y_c += 10;
 		line = get_next_line(fd);
 	}
 	return (vec);
-}
-
-void	bresenham_x(t_data *img, int x, int y, int x2, int y2) // if slope < 1;
-{
-	int	dx;
-	int	dy;
-	int	p;
-
-	dx = x2 - x;
-	if (dx < 0)
-		dx = -(dx);
-	dy = y2 - y;
-	if (dy < 0)
-		dy = -(dy);
-	p = (2 * dy) - dx;
-	while (x <= x2)
-	{
-		my_mlx_pixel_put(img, x, y, 0x00FF0000);
-		x++;
-		if (p <= 0)
-			p = p + 2 * dy;
-		else
-		{
-			p = p + (2 * dy) - (2 * dx);
-			y++;
-		}
-	}
-}
-
-void	bresenham_y(t_data *img, int x, int y, int x2, int y2) // if slope > 1;
-{
-	int	dx;
-	int	dy;
-	int	p;
-
-	dx = x2 - x;
-	if (dx < 0)
-		dx = -(dx);
-	dy = y2 - y;
-	if (dy < 0)
-		dy = -(dy);
-	p = (2 * dy) - dx;
-	while (y <= y2)
-	{
-		my_mlx_pixel_put(img, x, y, 0x00FF0000);
-		y--;
-		if (p < 0)
-			p = p + 2 * dy;
-		else
-		{
-			p = p + (2 * dy) - (2 * dx);
-			x++;
-		}
-	}
-}
-
-void	bresenham_y_new(t_data *img, int x, int y, int x2, int y2) // if slope > 1; or < 1?
-{
-	int	dx;
-	int	dy;
-	int	p;
-
-	dx = x2 - x;
-	dy = y2 - y;
-	if (dy < 0)
-		dy = -(dy);
-	if (dx < 0)
-		dx = -(dx);
-	p = (2 * dy) - dx;
-	while (x <= x2)
-	{
-		my_mlx_pixel_put(img, x, y, 0x00FF0000);
-		x++;
-		if (p <= 0)
-			p = p + 2 * dy;
-		else
-		{
-			p = p + (2 * dy) - (2 * dx);
-			y--;
-		}
-	}
-}
-
-void	new_bresen(t_data *img, int x1, int y1, int x2, int y2) // if slope < 1;
-{
-	int dx = x2 - x1;
-	int dy = y2 - y1;
-	int p = (2 * dx) - dy;
-
-	while (x1 <= x2)
-	{
-		my_mlx_pixel_put(img, x1, y1, 0x00FF0000);
-		x1++;
-		if (p < 0)
-			p = p + (2 * dy);
-		else
-		{
-			p = p + (2 * dy) - (2 * dx);
-			y1++;
-		}
-	}
-}
-
-void	new_bresen_2(t_data *img, int x1, int y1, int x2, int y2) // if slope > 1;
-{
-	int dx = x2 - x1;
-	if (dx < 0)
-		dx = -dx;
-	int dy = y2 - y1;
-	if (dy < 0)
-		dy = -dy;
-	int p = (2 * dx) - dy;
-
-	while (y1 <= y2)
-	{
-		my_mlx_pixel_put(img, x1, y1, 0x00FF0000);
-		y1++;
-		if (p < 0)
-			p = p + (2 * dy);
-		else
-		{
-			p = p + (2 * dy) - (2 * dx);
-			x1++;
-		}
-	}
-}
-
-void	bresenham(t_vec *vec, t_vec *next, t_data *img)
-{
-	int	delta_x;
-	int	delta_y;
-	int	i;
-
-	delta_x = next->x - vec->x;
-	delta_y = next->y - vec->y;
-	i = 0;
-	if (delta_x == 0)
-		return ;
-	if ((delta_y / delta_x) > 1) // slope > 1;
-		bresenham_y_new(img, vec->x, vec->y, next->x, next->y);
-	else
-		bresenham_x(img, vec->x, vec->y, next->x, next->y);
 }
 
 void	rotate(t_vec *vec, int x, int y)
@@ -330,6 +190,22 @@ t_vec	*create_frame(int x_c, int y_c, int length, int width)
 	return (vec);
 }
 
+void	draw_to_next_row(t_vec *vector, t_data *img, int length)
+{
+	int i = 0;
+	t_vec *next_vec;
+
+	next_vec = vector;
+	while (i < length)
+	{
+		next_vec = next_vec->next;
+		if (next_vec == NULL)
+			return ;
+		i++;
+	}
+	bresen_test(img, vector->x, vector->y, next_vec->x, next_vec->y);
+}
+
 int	main(int argc, char **argv)
 {
 	int		fd = open(argv[argc - 1], O_RDONLY);
@@ -340,6 +216,7 @@ int	main(int argc, char **argv)
 	t_vec	*next_vec;
 	t_vec 	*head;
 	int i = 0;
+	int length = 0;
 
 	mlx = mlx_init();
 	mlx_win = mlx_new_window(mlx, 1920, 1080, "FdF");
@@ -348,7 +225,7 @@ int	main(int argc, char **argv)
 								&img.endian);
 	int x_c = 1920 / 2;
 	int y_c = 1080 / 2;
-	vec = create_frame_new(x_c, y_c, fd);
+	vec = create_frame_new(x_c, y_c, fd, &length);
 	lstiter(vec, &rotate, x_c, y_c);
 	lstiter_rx(vec, &rotate_around_x);
 	head = vec;
@@ -360,12 +237,20 @@ int	main(int argc, char **argv)
 		vec = vec->next;
 		next_vec = vec->next;
 		i++;
-		int t = i % 18;
+		int t = i % (length - 1);
 		if (!t && next_vec != NULL)
 		{
 			vec = vec->next;
 			next_vec = vec->next;
 		}
+	}
+	vec = head->next;
+	next_vec = vec->next;
+	while(next_vec)
+	{
+		draw_to_next_row(vec, &img, length);
+		vec = vec->next;
+		next_vec = vec->next;
 	}
 	my_mlx_pixel_put(&img, vec->x, vec->y, 0x00FF0000);
 	mlx_put_image_to_window(mlx, mlx_win, img.img, 0, 0);

@@ -6,7 +6,7 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/06/25 14:48:24 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/09/13 19:11:48 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/09/16 15:36:18 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,14 +26,17 @@ typedef struct	s_data {
 }				t_data;
 
 typedef struct	s_vars {
+	t_data	img;
+	t_vec 	*head;
 	void	*mlx;
 	void	*win;
-	t_data	img;
 	int		scale;
 	int		length;
 	int		width;
 	int		fd;
-	t_vec 	*head;
+	int		z_values[5000];
+	int		y_values[5000];
+	int		x_values[5000];
 }				t_vars;
 
 void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
@@ -44,141 +47,195 @@ void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
 	*(unsigned int*)dst = color;
 }
 
-void	bresen_test(t_data *img, int x1, int y1, int x2, int y2) {
-	int	dx;
-	int dy;
-	int absdx;
-	int absdy;
-	int d;
-	int i;
+void	manage_direction(t_vec **vec, t_vec **next_vec, char mode)
+{
+		if (mode == 'd')
+			(*vec)->y++;
+		else if (mode == 'u')
+			(*vec)->y--;
+		else if (mode == 'r')
+			(*vec)->x++;
+		else if (mode == 'l')
+			(*vec)->x--;
+		*vec = (*vec)->next;
+		*next_vec = (*vec)->next;
+}
 
-	dx = x2 - x1;
-	dy = y2 - y1;
+void	manage_nodes(t_vec *head, t_vec **vec, t_vec **next_vec, char mode)
+{
+		if (mode == 'd')
+			(*vec)->y++;
+		else if (mode == 'u')
+			(*vec)->y--;
+		else if (mode == 'r')
+			(*vec)->x++;
+		else if (mode == 'l')
+			(*vec)->x--;
+		*vec = head->next;
+		*next_vec = (*vec)->next;
+}
+
+void	manage_row(t_vec **vec, t_vec **next_vec)
+{
+		*vec = (*vec)->next;
+		*next_vec = (*vec)->next;
+}
+
+int	get_dx(t_vec *vec, t_vec *next_vec)
+{
+	int	dx;
+
+	dx = next_vec->x - vec->x;
+	return (dx);
+}
+
+int	get_dy(t_vec *vec, t_vec *next_vec)
+{
+	int	dy;
+
+	dy = next_vec->y - vec->y;
+	return (dy);
+}
+
+int	get_absdx(int dx)
+{
+	int	absdx;
+
 	if (dx < 0)
 		absdx = -dx;
 	else
 		absdx = dx;
+	return (absdx);
+}
+
+int	get_absdy(int dy)
+{
+	int	absdy;
+
 	if (dy < 0)
 		absdy = -dy;
 	else
 		absdy = dy;
-
-	if (absdx > absdy) { // slope < 1;
-		i = 0;
-		d = 2 * absdy - absdx;
-		while (i < absdx)
-		{
-			if (dx < 0)
-				x1 = x1 - 1;
-			else
-				x1 = x1 + 1;
-			if (d < 0)
-				d = d + 2 * absdy;
-			else
-			{
-				if (dy < 0)
-					y1 = y1 - 1;
-				else
-					y1 = y1 + 1;
-				d = d + (2 * absdy - 2 * absdx);
-			}
-			my_mlx_pixel_put(img, x1, y1, 0x00FF0000);
-			i++;
-		}
-	}
-	else // slope >= 1;
-	{
-		i = 0;
-		d = 2 * absdx - absdy;
-		while (i < absdy)
-		{
-			if (dy < 0)
-				y1 = y1 - 1;
-			else
-				y1 = y1 + 1;
-			if (d < 0)
-				d = d + 2 * absdx;
-			else
-			{
-				if (dx < 0)
-					x1 = x1 - 1;
-				else
-					x1 = x1 + 1;
-				d = d + 2 * absdx - 2 * absdy;
-			}
-			my_mlx_pixel_put(img, x1, y1, 0x00FF0000);
-			i++;
-		}
-	}
-
+	return (absdy);
 }
 
-t_vec	*create_frame_new(int fd, t_vars *vars)
+void	get_d_more_than_one(t_vec *vec, t_vec *next_vec, int *y, int *d)
 {
-	t_vec	*vec; //head of the list;
+	if (get_dy(vec, next_vec) < 0)
+		*y = *y - 1;
+	else
+		*y = *y + 1;
+	*d = *d + (2 * get_absdy(get_dy(vec, next_vec)) - 2 * get_absdx(get_dx(vec, next_vec)));
+}
+
+void	get_d_less_than_one(t_vec *vec, t_vec *next_vec, int *x, int *d)
+{
+	if (get_dx(vec, next_vec) < 0)
+		*x = *x - 1;
+	else
+		*x = *x + 1;
+	*d = *d + 2 * get_absdx(get_dx(vec, next_vec)) - 2 * get_absdy(get_dy(vec, next_vec));
+}
+
+void	bresen_slope_more_than_one(t_vec *vec, t_vec *next_vec, t_data *img)
+{
+	int	d;
+	int	i;
+	int	x;
+	int	y;
+
+	d = 2 * get_absdy(get_dy(vec, next_vec)) - get_absdx(get_dx(vec, next_vec));
+	i = 0;
+	x = vec->x;
+	y = vec->y;
+	while (i < get_absdx(get_dx(vec, next_vec)))
+	{
+		if (get_dx(vec, next_vec) < 0)
+			x = x - 1;
+		else
+			x = x + 1;
+		if (d < 0)
+			d = d + 2 * get_absdy(get_dy(vec, next_vec));
+		else
+			get_d_more_than_one(vec, next_vec, &y, &d);
+		my_mlx_pixel_put(img, x, y, 0x00FF0000);
+		i++;
+	}
+}
+
+void	bresen_slope_less_than_one(t_vec *vec, t_vec *next_vec, t_data *img)
+{
+	int	d;
+	int	i;
+	int	x;
+	int	y;
+
+	d = 2 * get_absdy(get_dy(vec, next_vec)) - get_absdx(get_dx(vec, next_vec));
+	i = 0;
+	x = vec->x;
+	y = vec->y;
+	while (i < get_absdy(get_dy(vec, next_vec)))
+	{
+		if (get_dy(vec, next_vec) < 0)
+			y = y - 1;
+		else
+			y = y + 1;
+		if (d < 0)
+			d = d + 2 * get_absdx(get_dx(vec, next_vec));
+		else
+			get_d_less_than_one(vec, next_vec, &x, &d);
+		my_mlx_pixel_put(img, x, y, 0x00FF0000);
+		i++;
+	}
+}
+
+void	bresen_test(t_data *img, t_vec *vec, t_vec *next_vec)
+{
+	int	dx;
+	int dy;
+
+	dx = next_vec->x - vec->x;
+	dy = next_vec->y - vec->y;
+	if (get_absdx(dx) > get_absdy(dy))
+		bresen_slope_more_than_one(vec, next_vec, img);
+	else
+		bresen_slope_less_than_one(vec, next_vec, img);
+}
+
+int	get_z(t_vars *vars, char **split)
+{
+	int	z;
+
+	z = ft_atoi(split[vars->length]);
+	if (z > 0)
+		z += vars->scale;
+	else if (z < 0)
+		z -= vars->scale;
+	return (z);
+}
+
+t_vec	*create_frame_new(int fd, t_vars *vars, int x, int y)
+{
 	char	*line;
 	char	**ps;
-	int		i;
-	int		z;
-	int		x_c = 0;
-	int		y_c = 0;
+	t_vec	*vec;
 
 	vec = new_vec(0, 0, 0);
 	line = get_next_line(fd);
 	while (line)
 	{
-		i = 0;
+		vars->length = 0;
 		ps = ft_split(line, ' ');
-		while (ps[i])
+		while (ps[vars->length])
 		{
-			z = ft_atoi(ps[i]);
-			if (z > 0)
-				z = z + vars->scale;
-			if (z < 0)
-				z = z - vars->scale;
-			lstadd_back(&vec, new_vec(x_c, y_c, z));
-			x_c += vars->scale;
-			i++;
+			lstadd_back(&vec, new_vec(x, y, get_z(vars, ps)));
+			x += vars->scale;
+			vars->length++;
 		}
-		vars->length = i;
-		x_c = x_c - (i * vars->scale); // set x back to the initial value;
-		y_c += vars->scale;
+		x = x - (vars->length * vars->scale); // set x back to the initial value;
+		y += vars->scale;
 		line = get_next_line(fd);
 		vars->width++;
-	}
-	return (vec);
-}
-
-t_vec	*create_frame_zoom(t_vars *vars)
-{
-	int i = 0;
-	int j = 0;
-	int x = 0;
-	int y = 0;
-	t_vec *tmp;
-	t_vec *vec;
-
-	tmp = vars->head;
-	vec = new_vec(0, 0, 0);
-	while (j < vars->width)
-	{
-		while (i < vars->length)
-		{
-			// if (tmp->z > 0)
-			// 	tmp->z = tmp->z + 1;
-			// if (tmp->z < 0)
-			// 	tmp->z = tmp->z - 1;
-			if (tmp->z > 0)
-				tmp->z = tmp->z + 1;
-			lstadd_back(&vec, new_vec(x, y, tmp->z));
-			tmp = tmp->next;
-			x += vars->scale;
-			i++;
-		}
-		x = x - (i * vars->scale); // set x back to the initial value;
-		y += vars->scale;
-		i = 0;
-		j++;
 	}
 	return (vec);
 }
@@ -205,12 +262,102 @@ void	rotate_around_x(t_vec *vec)
 	vec->z = z_new;
 }
 
-void	draw_to_next_row(t_vec *vector, t_data *img, int length)
+int	get_z_zoom(t_vars *vars, int io, int *k)
 {
-	int i = 0;
-	t_vec *next_vec;
+	if (vars->z_values[*k] > 0)
+	{
+		if (io == 1)
+			vars->z_values[*k]++;
+		else
+			vars->z_values[*k]--;
+	}
+	else if (vars->z_values[*k] < 0)
+	{
+		if (io == 1)
+			vars->z_values[*k]--;
+		else
+			vars->z_values[*k]++;
+	}
+	return (vars->z_values[*k]);
+}
 
-	next_vec = vector;
+int	get_x_zoom(t_vars *vars, int io, int *k)
+{
+	if (vars->x_values[*k] > 0)
+	{
+		if (io == 1)
+			vars->x_values[*k]++;
+		else
+			vars->x_values[*k]--;
+	}
+	else if (vars->x_values[*k] < 0)
+	{
+		if (io == 1)
+			vars->x_values[*k]--;
+		else
+			vars->x_values[*k]++;
+	}
+	return (vars->x_values[*k]);
+}
+
+int	get_y_zoom(t_vars *vars, int io, int *k)
+{
+	if (vars->y_values[*k] > 0)
+	{
+		if (io == 1)
+			vars->y_values[*k]++;
+		else
+			vars->y_values[*k]--;
+	}
+	else if (vars->y_values[*k] < 0)
+	{
+		if (io == 1)
+			vars->y_values[*k]--;
+		else
+			vars->y_values[*k]++;
+	}
+	return (vars->y_values[*k]);
+}
+
+void	increase_vars(t_vars *vars, int *x, int *i, int *k)
+{
+	*x = *x + vars->scale;
+	(*i)++;
+	(*k)++;
+}
+
+t_vec	*create_frame_zoom(t_vars *vars, int io, int x, int y)
+{
+	int		i;
+	int		j;
+	int		k;
+	t_vec	*vec;
+
+	j = 0;
+	k = 0;
+	vec = new_vec(0, 0, 0);
+	while (j < vars->width)
+	{
+		i = 0;
+		while (i < vars->length)
+		{
+			lstadd_back(&vec, new_vec(x, y, get_z_zoom(vars, io, &k)));
+			increase_vars(vars, &x, &i, &k);
+		}
+		x -= (i * vars->scale); // set x back to the initial value;
+		y += vars->scale;
+		j++;
+	}
+	return (vec);
+}
+
+void	draw_to_next_row(t_vec *vec, t_data *img, int length)
+{
+	t_vec	*next_vec;
+	int		i;
+
+	next_vec = vec;
+	i = 0;
 	while (i < length)
 	{
 		next_vec = next_vec->next;
@@ -218,113 +365,196 @@ void	draw_to_next_row(t_vec *vector, t_data *img, int length)
 			return ;
 		i++;
 	}
-	bresen_test(img, vector->x, vector->y, next_vec->x, next_vec->y);
+	bresen_test(img, vec, next_vec);
+}
+
+void	init_z_array(t_vars *vars, t_vec *vec)
+{
+	int	i;
+
+	i = 0;
+	while (vec)
+	{
+		vars->z_values[i] = vec->z;
+		i++;
+		vec = vec->next;
+	}
+}
+
+void	init_x_array(t_vars *vars, t_vec *vec)
+{
+	int	i;
+
+	i = 0;
+	while (vec)
+	{
+		vars->x_values[i] = vec->x;
+		i++;
+		vec = vec->next;
+	}
+}
+
+void	init_y_array(t_vars *vars, t_vec *vec)
+{
+	int	i;
+
+	i = 0;
+	while (vec)
+	{
+		vars->y_values[i] = vec->y;
+		i++;
+		vec = vec->next;
+	}
 }
 
 t_vec *create_frame(int fd, t_vars *vars)
 {
-	t_vec *vec;
+	t_vec	*vec;
+	int		x;
+	int		y;
 
-	vec = malloc(sizeof(t_vec));
-	vec = create_frame_new(fd, vars);
+	x = 0;
+	y = 0;
+	vec = create_frame_new(fd, vars, x, y);
+	init_z_array(vars, vec);
+	init_x_array(vars, vec);
+	init_y_array(vars, vec);
 	lstiter(vec, &rotate);
 	lstiter_rx(vec, &rotate_around_x);
 	return (vec);
 }
 
-t_vec	*draw_map(t_vars *vars, int fd)
+void	draw_map(t_vars *vars, int fd)
 {
 	t_vec	*vec;
 	t_vec	*next_vec;
-	t_vec 	*head;
-	int i = 0;
+	int 	i;
+	int		eor;
 
-	vec = create_frame(fd, vars); // seems to work fine here;
-	head = vec;
+	vec = create_frame(fd, vars);
+	vars->head = vec;
 	vec = vec->next;
 	next_vec = vec->next;
+	i = 0;
 	while (next_vec)
 	{
-		bresen_test(&vars->img, vec->x, vec->y, next_vec->x, next_vec->y);
-		vec = vec->next;
-		next_vec = vec->next;
+		bresen_test(&vars->img, vec, next_vec);
+		manage_row(&vec, &next_vec);
 		i++;
-		int t = i % (vars->length - 1);
-		if (!t && next_vec != NULL)
-		{
-			vec = vec->next;
-			next_vec = vec->next;
-		}
+		eor = i % (vars->length - 1);
+		if (!eor && next_vec != NULL)
+			manage_row(&vec, &next_vec);
 	}
-	vec = head->next;
-	next_vec = vec->next;
-	while(next_vec)
+	manage_nodes(vars->head, &vec, &next_vec, 'n');
+	while (next_vec)
 	{
 		draw_to_next_row(vec, &vars->img, vars->length);
-		vec = vec->next;
-		next_vec = vec->next;
+		manage_row(&vec, &next_vec);
 	}
-	return (head);
 }
 
-void	draw_map_new(t_vec *head, t_vars *vars)
+void	move_map(t_vec *head, t_vars *vars, char mode)
 {
-	t_vec *vec;
-	t_vec *next_vec;
-	int i = 0;
+	t_vec	*vec;
+	t_vec	*next_vec;
+	int		i;
+	int		eor;
 
 	vec = head->next;
 	next_vec = vec->next;
-	while(next_vec)
+	i = 0;
+	while (next_vec)
 	{
-		// vec->x++;
-		bresen_test(&vars->img, vec->x, vec->y, next_vec->x, next_vec->y);
-		vec = vec->next;
-		next_vec = vec->next;
+		bresen_test(&vars->img, vec, next_vec);
+		manage_direction(&vec, &next_vec, mode);
 		i++;
-		int t = i % (vars->length - 1);
-		if (!t && next_vec != NULL)
-		{
-			vec->x++;
-			vec = vec->next;
-			next_vec = vec->next;
-		}
+		eor = i % (vars->length - 1);
+		if (!eor && next_vec != NULL)
+			manage_direction(&vec, &next_vec, mode);
  	}
-	// vec->x++;
-	vec = head->next;
-	next_vec = vec->next;
-	while(next_vec)
+	manage_nodes(head, &vec, &next_vec, mode);
+	while (next_vec)
 	{
 		draw_to_next_row(vec, &vars->img, vars->length);
-		vec = vec->next;
-		next_vec = vec->next;
+		manage_row(&vec, &next_vec);
 	}
+	init_x_array(vars, vars->head);
+	init_y_array(vars, vars->head);
 }
 
 int	key_hook(int keycode, t_vars *vars)
 {
 	t_vec *head;
+	int	x;
+	int	y;
 
-	vars->scale++;
+	x = 0;
+	y = 0;
 	mlx_destroy_image(vars->mlx, vars->img.img);
 	vars->img.img = mlx_new_image(vars->mlx, 6000, 6000);
-	// draw_map_new(vars->head, vars);
-	head = create_frame_zoom(vars);
-	lstiter(head, &rotate);
-	lstiter_rx(head, &rotate_around_x);
-	draw_map_new(head, vars);
+	if (keycode == 53)
+		exit (0);
+	if (keycode == 123)
+		move_map(vars->head, vars, 'l');
+	if (keycode == 124)
+		move_map(vars->head, vars, 'r');
+	if (keycode == 125)
+		move_map(vars->head, vars, 'd');
+	if (keycode == 126)
+		move_map(vars->head, vars, 'u');
+	if (keycode == 24)
+	{
+		vars->scale++;
+		head = create_frame_zoom(vars, 1, x, y);
+		lstiter(head, &rotate);
+		lstiter_rx(head, &rotate_around_x);
+		move_map(head, vars, '0');
+	}
+	if (keycode == 27)
+	{
+		vars->scale--;
+		head = create_frame_zoom(vars, 0, x, y);
+		lstiter(head, &rotate);
+		lstiter_rx(head, &rotate_around_x);
+		move_map(head, vars, '0');
+	}
 	mlx_put_image_to_window(vars->mlx, vars->win, vars->img.img, 0, 0);
-	keycode = 0;
 	return (0);
 }
 
-int mouse_hook(int mousecode, t_vars *vars)
+// int mouse_hook(int mousecode, t_vars *vars)
+// {
+// 	t_vec *head;
+// 	int	x;
+// 	int	y;
+
+// 	x = 0;
+// 	y = 0;
+// 	// mlx_destroy_image(vars->mlx, vars->img.img);
+// 	// vars->img.img = mlx_new_image(vars->mlx, 6000, 6000);
+// 	if (mousecode == 1)
+// 	{
+// 		printf("hehe\n");
+// 		head = create_frame_zoom(vars, 1, x, y);
+// 		lstiter(head, &rotate);
+// 		lstiter_rx(head, &rotate_around_x);
+// 		move_map(head, vars, '0');
+// 	}
+// 	else if (mousecode == 2)
+// 	{
+// 		printf("huhu\n");
+// 		head = create_frame_zoom(vars, 0, x, y);
+// 		lstiter(head, &rotate);
+// 		lstiter_rx(head, &rotate_around_x);
+// 		move_map(head, vars, '0');
+// 	}
+// 	mlx_put_image_to_window(vars->mlx, vars->win, vars->img.img, 0, 0);
+// 	return (0);
+// }
+
+int	red_cross(void)
 {
-	mlx_destroy_image(vars->mlx, vars->img.img);
-	vars->img.img = mlx_new_image(vars->mlx, 6000, 6000);
-	draw_map_new(vars->head, vars);
-	mlx_put_image_to_window(vars->mlx, vars->win, vars->img.img, 0, 0);
-	mousecode = 0;
+	exit(0);
 	return (0);
 }
 
@@ -333,25 +563,22 @@ int	main(int argc, char **argv)
 	int		fd = open(argv[argc - 1], O_RDONLY);
 	void	*mlx;
 	void	*win;
-	// t_data	img;
 	t_vars vars;
 
 	mlx = mlx_init();
 	vars.mlx = mlx;
 	win = mlx_new_window(mlx, 1920, 1080, "FdF");
 	vars.win = win;
-	// img.img = mlx_new_image(mlx, 6000, 6000);
 	vars.img.img = mlx_new_image(mlx, 6000, 6000);
 	vars.scale = 30;
 	vars.fd = fd;
-	vars.length = 0;
 	vars.width = 0;
 
 	vars.img.addr = mlx_get_data_addr(vars.img.img, &vars.img.bits_per_pixel, &vars.img.line_length,
 								&vars.img.endian);
-	vars.head = draw_map(&vars, fd);
+	draw_map(&vars, fd);
 	mlx_put_image_to_window(mlx, win, vars.img.img, 0, 0);
-	mlx_hook(win, 2, 1L<<0, key_hook, &vars);
-	// mlx_mouse_hook(vars.win, mouse_hook, &vars);
+	mlx_key_hook(vars.win, key_hook, &vars);
+	mlx_hook(vars.win, 17, 0L, red_cross, &vars);
 	mlx_loop(mlx);
 }

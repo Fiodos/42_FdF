@@ -6,7 +6,7 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/07/01 13:53:28 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/09/19 20:24:06 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/09/21 11:27:50 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,9 +19,9 @@ t_vec	*new_vec(int x, int y, int z)
 	result = malloc(sizeof(t_vec));
 	if (result == NULL)
 		return (NULL);
-	result->x = (float)x;
-	result->y = (float)y;
-	result->z = (float)z;
+	result->x = (double)x;
+	result->y = (double)y;
+	result->z = (double)z;
 	result->next = NULL;
 	return (result);
 }

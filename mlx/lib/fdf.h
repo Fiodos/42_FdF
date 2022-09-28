@@ -6,7 +6,7 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/06/28 17:03:26 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/09/21 15:15:36 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/09/28 20:36:28 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,18 +47,23 @@ typedef struct	s_vars {
 	double		l;
 	double		w;
 	char	**argv;
-	double		x_values[5000];
-	double		y_values[5000];
-	double		z_values[5000];
-	double		x_values_dyn[5000];
-	double		y_values_dyn[5000];
-	double		z_values_dyn[5000];
+	double		x_values[14000];
+	double		y_values[14000];
+	double		z_values[14000];
+	int			operations[5000];
+	int			index;
 	double		angle;
-	int		rota_counter;
+	int		rota_counter_x;
+	int		rota_counter_x_back;
+	int		rota_counter_y;
+	int		rota_counter_y_back;
 	int		zoom_counter;
 	int		neg_zoom_counter;
+	int		zoom_in_amount;
+	int		zoom_out_amount;
 	int		i_z;
-
+	double	inc_z_scale;
+	double	dec_z_scale;
 }				t_vars;
 
 t_vec	*new_vec(int x, int y, int z);

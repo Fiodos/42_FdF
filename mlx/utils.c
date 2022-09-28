@@ -6,7 +6,7 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/07/01 13:53:28 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/09/21 11:27:50 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/09/28 19:05:06 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,8 +59,8 @@ void	lstiter(t_vec *lst, void (*f)(t_vec *, int, int), t_vars *vars)
 	t_vec	*curr;
 	int	x = (vars->length * 3 * vars->scale) / 2;
 	int	y = (vars->width * 3 * vars->scale) / 2;
-	x = 1920 / 2;
-	y = 1080 / 2;
+	x = 3840 / 2;
+	y = 2160 / 2;
 
 	curr = lst;
 	while (curr != NULL)

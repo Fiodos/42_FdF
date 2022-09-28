@@ -6,7 +6,7 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/06/25 14:48:24 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/09/21 16:42:10 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/09/28 20:38:54 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -182,12 +182,13 @@ int	get_z(t_vars *vars, char **split)
 {
 	int	z;
 
+	// the 30 was a 15 previously;
 	z = ft_atoi(split[vars->length]);
-	if (z <= 15 && z > 0)
+	if (z <= 30 && z > 0)
 		z *= vars->scale;
-	else if (z >= -15 && z < 0)
+	else if (z >= -30 && z < 0)
 		z *= vars->scale;
-	else if (z > 15 || z < -15)
+	else if (z > 30 || z < -30)
 		z *= 2;
 	vars->z_values[vars->i_z] = z;
 	vars->i_z++;
@@ -203,6 +204,7 @@ void init_pos_list(t_vec *vec, t_vars *vars)
 	tmp = vec->next;
 	while (tmp)
 	{
+		// printf("%d\n", i);
 		vars->x_values[i] = tmp->x;
 		vars->y_values[i] = tmp->y;
 		vars->z_values[i] = tmp->z;
@@ -242,8 +244,8 @@ void	rotate(t_vec *vec, int x, int y)
 	double	x_new;
 	double	y_new;
 
-	x_new = vec->x - x * cos(PI/4) - vec->y - y * sin(PI/4);
-	y_new = vec->x - x * sin(PI/4) + vec->y - y * cos(PI/4);
+	x_new = (vec->x - x) * cos(PI/4) - (vec->y - y) * sin(PI/4);
+	y_new = (vec->x - x) * sin(PI/4) + (vec->y - y) * cos(PI/4);
 	vec->x = x_new + x;
 	vec->y = y_new + y;
 }
@@ -321,12 +323,14 @@ void	create_frame_zoom(t_vars *vars, int io)
 		{
 			tmp->x = tmp->x * 1.1;
 			tmp->y = tmp->y * 1.1;
+			tmp->z = tmp->z * 1.1;
  			tmp = tmp->next;
 		}
 		else if (io == 0)
 		{
 			tmp->x = tmp->x / 1.1;
 			tmp->y = tmp->y / 1.1;
+			tmp->z = tmp->z / 1.1;
 			tmp = tmp->next;
 		}
 	}
@@ -367,10 +371,10 @@ t_vec *create_frame(t_vars *vars, int argc, char **argv)
 	int		y;
 
 	fd = open_file(argc, argv);
-	x = (1920 / 2) - vars->l / 2;
-	y = (1080 / 2) - vars->w / 2;
+	x = (3840 / 2) - (vars->l / 2);
+	y = (2160 / 2) - (vars->w / 2);
 	vec = create_frame_new(fd, vars, x, y);
-	init_pos_list(vec, vars);
+	// init_pos_list(vec, vars);
 	lstiter(vec, &rotate, vars);
 	lstiter_rx(vec, &rotate_around_x);
 	return (vec);
@@ -612,14 +616,18 @@ void	rotate_operation_y_backwards(t_vars *vars)
 	}
 }
 
-
 void	define_z_value(t_vars *vars, t_vec *vec, int id, int i)
 {
 	if (id == 0) // increase;
 	{
 		if (vars->z_values[i] > 0)
 		{
-			vars->z_values[i] += 10;
+			vars->z_values[i] *= 1.1;
+			vec->z = vars->z_values[i];
+		}
+		else if (vars->z_values[i] < 0)
+		{
+			vars->z_values[i] *= 1.1;
 			vec->z = vars->z_values[i];
 		}
 		else
@@ -629,10 +637,15 @@ void	define_z_value(t_vars *vars, t_vec *vec, int id, int i)
 	{
 		if (vars->z_values[i] > 0)
 		{
-			vars->z_values[i] -= 10;
+			if (vars->z_values[i] / 1.1 == 0 || vars->z_values[i] / 1.1 < 0)
+				vars->z_values[i] = vars->z_values[i];
+			vars->z_values[i] /= 1.1;
 			vec->z = vars->z_values[i];
-			if (vars->z_values[i] == 0)
-				vars->z_values[i] += 10;
+		}
+		else if (vars->z_values[i] < 0)
+		{
+			vars->z_values[i] /= 1.1;
+			vec->z = vars->z_values[i];
 		}
 		else
 			vec->z = vars->z_values[i];
@@ -659,179 +672,376 @@ void	set_initial_values(t_vars *vars, int id)
 	lstiter_rx(vec, &rotate_around_x);
 }
 
-void	get_zoom_amount(t_vars *vars)
+void	zoom_in(t_vars *vars)
 {
-	int	zoom_amount;
+	t_vec	*vec;
+	int		i;
+	double	after_x;
+	double	after_y;
+	double	before_x;
+	double	before_y;
+
+	vec = vars->head->next;
+	before_x = vec->x;
+	before_y = vec->y;
+	i = 0;
+	while (i < vars->zoom_counter)
+	{
+		create_frame_zoom(vars, 1);
+		i++;
+	}
+	after_x = vars->head->next->x;
+	after_y = vars->head->next->y;
+	vec = vars->head->next;
+	while (vec)
+	{
+		vec->x = vec->x - (after_x - before_x);
+		vec->y = vec->y - (after_y - before_y);
+		vec = vec->next;
+	}
 }
 
-void	create_frame_increase_z(t_vars *vars, int id)
+void	zoom_out(t_vars *vars)
 {
-	int			i;
-	int			zoom_amount;
-	double		before;
-	double		before_y;
-	double		after;
-	double		after_y;
-	double		angle;
-	t_vec		*vec;
+	t_vec	*vec;
+	int		i;
+	double	after_x;
+	double	after_y;
+	double	before_x;
+	double	before_y;
+
+	vec = vars->head->next;
+	before_x = vec->x;
+	before_y = vec->y;
+	i = 0;
+	// zoom_amount = -zoom_amount;
+	while (i < vars->neg_zoom_counter)
+	{
+		create_frame_zoom(vars, 0);
+		i++;
+	}
+	after_x = vars->head->next->x;
+	after_y = vars->head->next->y;
+	vec = vars->head->next;
+	while (vec)
+	{
+		vec->x = vec->x + (before_x - after_x);
+		vec->y = vec->y + (before_y - after_y);
+		vec = vec->next;
+	}
+}
+
+// void	get_zoom(t_vars *vars, int zoom_amount)
+// {
+// 	double	before_x;
+// 	double	before_y;
+// 	t_vec	*vec;
+
+// 	vec = vars->head->next;
+// 	before_x = vec->x;
+// 	before_y = vec->y;
+// 	if (zoom_amount > 0)
+// 		zoom_in(vars, before_x, before_y, zoom_amount);
+// 	else
+// 	{
+// 		if (zoom_amount != 0)
+// 			zoom_out(vars, before_x, before_y, zoom_amount);
+// 	}
+// }
+
+void	get_rotation_x_forward(t_vars *vars, double angle)
+{
+	double	before_y;
+	double	after_y;
+	t_vec	*vec;
+
+	vec = vars->head->next;
+	before_y = vec->y;
+	while (vec)
+	{
+		rotate_around_x_custom_angle(vec, angle);
+		vec = vec->next;
+	}
+	vec = vars->head->next;
+	after_y = vec->y;
+	while (vec)
+	{
+		vec->y = vec->y + (before_y - after_y);
+		vec = vec->next;
+	}
+}
+
+void	get_rotation_x_backward(t_vars *vars, double angle)
+{
+	double	before_y;
+	double	after_y;
+	t_vec	*vec;
+
+	vec = vars->head->next;
+	before_y = vec->y;
+	angle = -angle;
+	while (vec)
+	{
+		rotate_around_x_custom_angle_backwards(vec, angle);
+		vec = vec->next;
+	}
+	vec = vars->head->next;
+	after_y = vec->y;
+	while (vec)
+	{
+		vec->y = vec->y - (after_y - before_y);
+		vec = vec->next;
+	}
+}
+
+void	get_rotation_x_forward_new(t_vars *vars)
+{
+	t_vec	*vec;
+	double	before_y;
+	double	after_y;
+	int		i;
+
+	i = 0;
+	while (i < vars->rota_counter_x)
+	{
+		vec = vars->head->next;
+		before_y = vec->y;
+		while (vec)
+		{
+			rotate_around_x_custom_angle(vec, vars->angle);
+			vec = vec->next;
+		}
+		vec = vars->head->next;
+		after_y = vec->y;
+		while (vec)
+		{
+			vec->y = vec->y + (before_y - after_y);
+			vec = vec->next;
+		}
+		i++;
+	}
+}
+
+void	get_rotation_x_backward_new(t_vars *vars)
+{
+	t_vec	*vec;
+	double	before_y;
+	double	after_y;
+	int		i;
+
+	i = 0;
+	while (i < vars->rota_counter_x_back)
+	{
+		vec = vars->head->next;
+		before_y = vec->y;
+		while (vec)
+		{
+			rotate_around_x_custom_angle_backwards(vec, vars->angle);
+			vec = vec->next;
+		}
+		vec = vars->head->next;
+		after_y = vec->y;
+		while (vec)
+		{
+			vec->y = vec->y - (after_y - before_y);
+			vec = vec->next;
+		}
+		i++;
+	}
+}
+
+void	get_rotation_y_forward_new(t_vars *vars)
+{
+	t_vec	*vec;
+	double	before_x;
+	double	after_x;
+	int		i;
+
+	i = 0;
+	while (i < vars->rota_counter_y)
+	{
+		vec = vars->head->next;
+		before_x = vec->x;
+		while (vec)
+		{
+			rotate_around_y_custom_angle(vec, vars->angle);
+			vec = vec->next;
+		}
+		vec = vars->head->next;
+		after_x = vec->x;
+		while (vec)
+		{
+			vec->x = vec->x + (before_x - after_x);
+			vec = vec->next;
+		}
+		i++;
+	}
+}
+
+void	get_rotation_y_backward_new(t_vars *vars)
+{
+	t_vec	*vec;
+	double	before_x;
+	double	after_x;
+	int		i;
+
+	i = 0;
+	while (i < vars->rota_counter_y_back)
+	{
+		vec = vars->head->next;
+		before_x = vec->x;
+		while (vec)
+		{
+			rotate_around_y_custom_angle_backwards(vec, vars->angle);
+			vec = vec->next;
+		}
+		vec = vars->head->next;
+		after_x = vec->x;
+		while (vec)
+		{
+			vec->x = vec->x - (after_x - before_x);
+			vec = vec->next;
+		}
+		i++;
+	}
+}
+
+void	get_rotation_x(t_vars *vars)
+{
+	double	angle;
+	double	before_y;
+	t_vec	*vec;
+
+	angle = (vars->rota_counter_x - vars->rota_counter_x_back) * vars->angle;
+	vec = vars->head->next;
+	before_y = vec->y;
+	if (angle > 0)
+		get_rotation_x_forward(vars, angle);
+	else if (angle != 0)
+			get_rotation_x_backward(vars, angle);
+}
+
+void	get_rotation_y_forwards(t_vars *vars, double angle)
+{
+	double	before_x;
+	double	after_x;
+	t_vec	*vec;
+
+	vec = vars->head->next;
+	before_x = vec->x;
+	while (vec)
+	{
+		rotate_around_y_custom_angle(vec, angle);
+		vec = vec->next;
+	}
+	vec = vars->head->next;
+	after_x = vec->x;
+	while (vec)
+	{
+		vec->x = vec->x + (before_x - after_x);
+		vec = vec->next;
+	}
+}
+
+void	get_rotation_y_backwards(t_vars *vars, double angle)
+{
+	double	before_x;
+	double	after_x;
+	t_vec	*vec;
+
+	vec = vars->head->next;
+	before_x = vec->x;
+	angle = -angle;
+	while (vec)
+	{
+		rotate_around_y_custom_angle_backwards(vec, angle);
+		vec = vec->next;
+	}
+	vec = vars->head->next;
+	after_x = vec->x;
+	while (vec)
+	{
+		vec->x = vec->x - (after_x - before_x);
+		vec = vec->next;
+	}
+}
+
+void	get_rotation_y(t_vars *vars)
+{
+	double	angle;
+	double	before_x;
+	t_vec	*vec;
+
+	angle = (vars->rota_counter_y - vars->rota_counter_y_back) * vars->angle;
+	vec = vars->head->next;
+	before_x= vec->x;
+	if (angle > 0)
+		get_rotation_y_forwards(vars, angle);
+	else if (angle != 0)
+		get_rotation_y_backwards(vars, angle);
+}
+
+void	zoom_map_increase_z(t_vars *vars, int io)
+{
+	t_vec	*vec;
+	double	before_x;
+	double	before_y;
+	double	after_x;
+	double	after_y;
+
+	before_x = vars->head->next->x;
+	before_y = vars->head->next->y;
+	create_frame_zoom(vars, io);
+	after_x = vars->head->next->x;
+	after_y = vars->head->next->y;
+	vec = vars->head->next;
+	while (vec)
+	{
+		vec->x = vec->x - (after_x - before_x);
+		vec->y = vec->y - (after_y - before_y);
+		vec = vec->next;
+	}
+}
+
+void	create_frame_change_z(t_vars *vars, int id) // id defines either increase or decrease;
+{
+	int	i;
+	int	zoom_amount;
 
 	i = 0;
 	set_initial_values(vars, id);
 	zoom_amount = vars->zoom_counter - vars->neg_zoom_counter;
-	if (zoom_amount > 0)
+	while (i < vars->index)
 	{
-		i = 0;
-		before = vars->head->next->x;
-		before_y = vars->head->next->y;
-		while (i < zoom_amount)
-		{
-			create_frame_zoom(vars, 1);
-			i++;
-		}
-
-		after = vars->head->next->x;
-		after_y = vars->head->next->y;
-		vec = vars->head->next;
-		while (vec)
-		{
-			vec->x = vec->x - (after - before);
-			vec->y = vec->y - (after_y - before_y);
-			vec = vec->next;
-		}
-	}
-	else
-	{
-		zoom_amount = -zoom_amount;
-		i = 0;
-		before = vars->head->next->x;
-		before_y = vars->head->next->y;
-		while (i < zoom_amount)
-		{
-			create_frame_zoom(vars, 0);
-			i++;
-		}
-		after = vars->head->next->x;
-		after_y = vars->head->next->y;
-		vec = vars->head->next;
-		while (vec)
-		{
-			vec->x = vec->x + (before - after);
-			vec->y = vec->y + (before_y - after_y);
-			vec = vec->next;
-		}
-	}
-	if (vars->rota_counter > 0)
-	{
-		angle = vars->rota_counter * vars->angle;
-		vec = vars->head->next;
-		before = vec->y;
-		while (vec)
-		{
-			rotate_around_x_custom_angle(vec, angle);
-			vec = vec->next;
-		}
-		vec = vars->head->next;
-		after = vec->y;
-		while (vec)
-		{
-			vec->y = vec->y + (before - after);
-			vec = vec->next;
-		}
+		if (vars->operations[i] == 1)
+			rotate_operation_x(vars);
+		else if (vars->operations[i] == 2)
+			rotate_operation_x_backwards(vars);
+		else if (vars->operations[i] == 3)
+			rotate_operation_y(vars);
+		else if (vars->operations[i] == 4)
+			rotate_operation_y_backwards(vars);
+		else if (vars->operations[i] == 5)
+				zoom_map_increase_z(vars, 1);
+		else if (vars->operations[i] == 6)
+				zoom_map_increase_z(vars, 0);
+		i++;
 	}
 }
 
-void	create_frame_decrease_z(t_vars *vars)
+void	increase_z(t_vars *vars)
 {
-	int			i;
-	int			zoom_amount;
-	double		before;
-	double		before_y;
-	double		after;
-	double		after_y;
-	double		angle;
-	t_vec		*vec;
+	t_vec	*vec;
+	int		i;
 
+	vec = vars->head->next; // first_node;
 	i = 0;
-	vec = vars->head->next;
-	while (vec) // init the raw values here;
+	while (vec)
 	{
-		vec->x = vars->x_values[i];
-		vec->y = vars->y_values[i];
 		if (vars->z_values[i] > 0)
-		{
-			vars->z_values[i] -= 10;
-			vec->z = vars->z_values[i];
-			if (vars->z_values[i] == 0)
-				vars->z_values[i] += 10;
-		}
-		else
-			vec->z = vars->z_values[i];
+			vec->y -= 5;
 		i++;
 		vec = vec->next;
-	}
-	vec = vars->head->next;
-	lstiter(vec, &rotate, vars);
-	lstiter_rx(vec, &rotate_around_x);
-	zoom_amount = vars->zoom_counter - vars->neg_zoom_counter;
-	if (zoom_amount > 0)
-	{
-		i = 0;
-		before = vars->head->next->x;
-		before_y = vars->head->next->y;
-		while (i < zoom_amount)
-		{
-			create_frame_zoom(vars, 1);
-			i++;
-		}
-
-		after = vars->head->next->x;
-		after_y = vars->head->next->y;
-		vec = vars->head->next;
-		while (vec)
-		{
-			vec->x = vec->x - (after - before);
-			vec->y = vec->y - (after_y - before_y);
-			vec = vec->next;
-		}
-	}
-	else
-	{
-		zoom_amount = -zoom_amount;
-		i = 0;
-		before = vars->head->next->x;
-		before_y = vars->head->next->y;
-		while (i < zoom_amount)
-		{
-			create_frame_zoom(vars, 0);
-			i++;
-		}
-		after = vars->head->next->x;
-		after_y = vars->head->next->y;
-		vec = vars->head->next;
-		while (vec)
-		{
-			vec->x = vec->x + (before - after);
-			vec->y = vec->y + (before_y - after_y);
-			vec = vec->next;
-		}
-	}
-	if (vars->rota_counter > 0)
-	{
-		angle = vars->rota_counter * vars->angle;
-		vec = vars->head->next;
-		before = vec->y;
-		while (vec)
-		{
-			rotate_around_x_custom_angle(vec, angle);
-			vec = vec->next;
-		}
-		vec = vars->head->next;
-		after = vec->y;
-		while (vec)
-		{
-			vec->y = vec->y + (before - after);
-			vec = vec->next;
-		}
 	}
 }
 
@@ -840,39 +1050,48 @@ int	key_hook(int keycode, t_vars *vars)
 	mlx_destroy_image(vars->mlx, vars->img.img);
 	// printf("%d\n", keycode);
 	// vars->img.img = mlx_new_image(vars->mlx, (vars->length * 3 * vars->scale), (vars->width * 3 * vars->scale));
-	vars->img.img = mlx_new_image(vars->mlx, 1920, 1080);
-	if (keycode == 13) // w;
+	vars->img.img = mlx_new_image(vars->mlx, 3840, 2160);
+	if (keycode == 13) // w; // op = 1;
 	{
 		rotate_operation_x(vars);
 		simple_draw(vars);
-		vars->rota_counter++;
+		vars->rota_counter_x++;
+		vars->operations[vars->index++] = 1;
 	}
-	if (keycode == 1) // s;
+	if (keycode == 1) // s; // op = 1;
 	{
 		rotate_operation_x_backwards(vars);
 		simple_draw(vars);
+		vars->rota_counter_x_back++;
+		vars->operations[vars->index++] = 2;
+
 	}
-	if (keycode == 0) // a;
+	if (keycode == 0) // a; // op = 2;
 	{
 		rotate_operation_y(vars);
 		simple_draw(vars);
+		vars->rota_counter_y++;
+		vars->operations[vars->index++] = 3;
 	}
-	if (keycode == 2) // d;
+	if (keycode == 2) // d; // op = 2;
 	{
 		rotate_operation_y_backwards(vars);
 		simple_draw(vars);
+		vars->rota_counter_y_back++;
+		vars->operations[vars->index++] = 4;
 	}
 	if (keycode == 53)
 		exit (0);
 	if (keycode == 123) // linke pfeiltaste => increase z;
 	{
-		create_frame_increase_z(vars, 0);
+		create_frame_change_z(vars, 0);
 		simple_draw(vars);
 		// move_map_new(vars->head, vars, 'l');
 	}
 	if (keycode == 124) // rechte pfeiltaste => decrease z;
 	{
-		create_frame_decrease_z(vars);
+		// create_frame_decrease_z(vars);
+		create_frame_change_z(vars, 1);
 		simple_draw(vars);
 		// move_map_new(vars->head, vars, 'r');
 	}
@@ -880,17 +1099,19 @@ int	key_hook(int keycode, t_vars *vars)
 		move_map_new(vars->head, vars, 'd');
 	if (keycode == 126)
 		move_map_new(vars->head, vars, 'u');
-	if (keycode == 24) // zoom in;
+	if (keycode == 24) // zoom in; // op = 3;
 	{
 		zoom_map(vars, 1);
 		vars->zoom_counter++;
+		vars->operations[vars->index++] = 5;
 	}
-	if (keycode == 27) // zoom out;
+	if (keycode == 27) // zoom out; // op = 3;
 	{
 		zoom_map(vars, 0);
 		vars->neg_zoom_counter++;
+		vars->operations[vars->index++] = 6;
 	}
-	mlx_put_image_to_window(vars->mlx, vars->win, vars->img.img, 0, 0);
+	mlx_put_image_to_window(vars->mlx, vars->win, vars->img.img, -1920/2, -1080/5);
 	return (0);
 }
 
@@ -928,14 +1149,18 @@ int	get_width_and_length(int argc, char **argv, t_vars *vars)
 	return (width);
 }
 
-void	adjust_scale(t_vars *vars, int *length, int *width)
+void	adjust_scale(t_vars *vars, double *length, double *width)
 {
-	if (*length >= 6000)
+	if (*length >= 500)
+	{
 		vars->scale = vars->scale / 4;
+	}
 	// *length = (vars->length * 3 * vars->scale);
 	// *width = (vars->width * 3 * vars->scale);
-	length = 0;
-	width = 0;
+	// length = 0;
+	// width = 0;
+	*length = vars->length * vars->scale;
+	*width = vars->width * vars->scale;
 }
 
 int	main(int argc, char **argv)
@@ -952,23 +1177,31 @@ int	main(int argc, char **argv)
 	// width = (vars.width * 3 * vars.scale);
 	vars.l = vars.length * vars.scale;
 	vars.w = vars.width * vars.scale;
+	adjust_scale(&vars, &vars.l, &vars.w);
+	printf("l: %f\n", vars.l);
+	printf("w: %f\n", vars.w);
 	vars.argc = argc;
 	vars.argv = argv;
 	vars.i_z = 0;
-	vars.rota_counter = 0;
+	vars.rota_counter_x = 0;
+	vars.rota_counter_x_back = 0;
+	vars.rota_counter_y = 0;
+	vars.rota_counter_y_back = 0;
 	vars.zoom_counter = 0;
 	vars.neg_zoom_counter = 0;
 	vars.angle = 0.028;
-	// adjust_scale(&vars, &length, &width);
+	vars.index = 0;
 	// vars.img.img = mlx_new_image(vars.mlx, length, width);
-	vars.img.img = mlx_new_image(vars.mlx, 1920, 1080);
+	// vars.img.img = mlx_new_image(vars.mlx, 1920, 1080);
+	vars.img.img = mlx_new_image(vars.mlx, 3840, 2160);
 	vars.img.addr = mlx_get_data_addr(vars.img.img, &vars.img.bits_per_pixel, &vars.img.line_length,
 									&vars.img.endian);
 	// vars.l = 1920/2 - (vars.length * 3 * vars.scale) / 2;
 	// vars.w = 1080/2 - (vars.width * 3 * vars.scale) / 2;
 	draw_map(&vars, argc, argv);
+	// my_mlx_pixel_put(&vars.img, 1920 / 2, 1080 / 2, 0x00FF0000);
 	// mlx_put_image_to_window(vars.mlx, vars.win, vars.img.img, 1920/2 - (length / 2), 1080/2 - (width / 2));
-	mlx_put_image_to_window(vars.mlx, vars.win, vars.img.img, 0, 0);
+	mlx_put_image_to_window(vars.mlx, vars.win, vars.img.img, -1920/2, -1080/5);
 	mlx_key_hook(vars.win, key_hook, &vars);
 	mlx_hook(vars.win, 17, 0L, red_cross, &vars);
 	mlx_loop(vars.mlx);

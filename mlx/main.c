@@ -6,7 +6,7 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/06/25 14:48:24 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/10/06 18:33:51 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/10/07 20:00:09 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,78 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <math.h>
+
+// 810202 ==> 8454658 ==> 138757720
+uint32_t	hex_to_hex(uint32_t hex)
+{
+	uint32_t	result;
+	int			num;
+	int			exponent;
+
+	exponent = 0;
+	while (hex)
+	{
+		num = hex % 10;
+		result = result + (num * pow(16, exponent));
+		hex = hex / 10;
+		exponent++;
+	}
+	return (result);
+}
+
+uint32_t	ft_atoi_base(const char *color)
+{
+	uint32_t	converted_color;
+	int			index;
+	int			len;
+	int			i;
+
+	char *base16 = "0123456789abcdef";
+	converted_color = 0;
+	len = ft_strlen(color) - 1;
+	i = 0;
+	while (color[i])
+	{
+		index = 0;
+		while (color[i] != base16[index])
+			index++;
+		converted_color = converted_color + (index * pow(16, len));
+		len--;
+		i++;
+	}
+	converted_color = hex_to_hex(converted_color);
+	return (converted_color);
+}
+
+
+int	ft_atoi_fdf(const char *str, t_vars_new *vars)
+{
+	int	i;
+	int	minus_count;
+	int	num;
+
+	i = 0;
+	minus_count = 1;
+	num = 0;
+	while (str[i] == '\r' || str[i] == '\t' || str[i] == ' '
+		|| str[i] == '\f' || str[i] == '\v' || str[i] == '\n')
+		i++;
+	if (str[i] == '-')
+	{
+		minus_count *= (-1);
+		i++;
+	}
+	else if (str[i] == '+')
+		i++;
+	while (str[i] <= '9' && str[i] >= '0')
+	{
+		num = (str[i] - '0') + (num * 10);
+		i++;
+	}
+	if (str[i] == ',')
+		vars->color = ft_atoi_base(&str[i + 3]);
+	return (num * minus_count);
+}
 
 void	get_next_nodes(t_vec **vec, t_vec **next_vec)
 {
@@ -28,16 +100,8 @@ void	reset_nodes(t_vec **vec, t_vec **next_vec, t_vars_new *vars)
 	*next_vec = (*vec)->next;
 }
 
-void	manage_nodes(t_vec *head, t_vec **vec, t_vec **next_vec, char mode)
+void	manage_nodes(t_vec *head, t_vec **vec, t_vec **next_vec)
 {
-	if (mode == 'd')
-		(*vec)->y = (*vec)->y + 10;
-	else if (mode == 'u')
-		(*vec)->y = (*vec)->y - 10;
-	else if (mode == 'r')
-		(*vec)->x = (*vec)->x + 10;
-	else if (mode == 'l')
-		(*vec)->x = (*vec)->x - 10;
 	*vec = head->next;
 	*next_vec = (*vec)->next;
 }
@@ -134,6 +198,7 @@ void	bresen_slope_more_than_one(t_vec *vec, t_vec *next_vec, mlx_image_t *img)
 			get_d_more_than_one(vec, next_vec, &y, &d);
 		if (check_range(x, y))
 			mlx_put_pixel(img, x, y, 0xFFFFFF);
+			// mlx_put_pixel(img, x, y, vec->color);
 		i++;
 	}
 }
@@ -159,9 +224,9 @@ void	bresen_slope_less_than_one(t_vec *vec, t_vec *next_vec, mlx_image_t *img)
 			d = d + 2 * get_absdx(get_dx(vec, next_vec));
 		else
 			get_d_less_than_one(vec, next_vec, &x, &d);
-
 		if (check_range(x, y))
 			mlx_put_pixel(img, x, y, 0xFFFFFF);
+			// mlx_put_pixel(img, x, y, vec->color);
 		i++;
 	}
 }
@@ -184,7 +249,7 @@ int	get_z(t_vars_new *vars, char **split)
 	int	z;
 
 	// the 30 was a 15 previously;
-	z = ft_atoi(split[vars->length]);
+	z = ft_atoi_fdf(split[vars->length], vars);
 	if (z <= 30 && z > 0)
 		z *= vars->scale;
 	else if (z >= -30 && z < 0)
@@ -218,8 +283,11 @@ t_vec	*create_frame_new(int fd, t_vars_new *vars, int x, int y)
 	char	*line;
 	char	**ps;
 	t_vec	*vec;
+	t_vec	*next;
+	t_vec	*tmp;
 
 	vec = new_vec(x, y, 0);
+	tmp = vec;
 	line = get_next_line(fd);
 	while (line)
 	{
@@ -227,11 +295,11 @@ t_vec	*create_frame_new(int fd, t_vars_new *vars, int x, int y)
 		ps = ft_split(line, ' ');
 		while (ps[vars->length])
 		{
-			lstadd_back(&vec, new_vec(x, y, get_z(vars, ps)));
+			next = new_vec(x, y, get_z(vars, ps));
+			lstadd_back(&tmp, &next, vars);
 			x += vars->scale;
-			vars->length++;
 		}
-		x = x - (vars->length * vars->scale); // set x back to the initial value;
+		x = x - (vars->length * vars->scale);
 		y += vars->scale;
 		line = get_next_line(fd);
 	}
@@ -348,7 +416,7 @@ void	draw_map(t_vars_new *vars, int argc, char **argv)
 		if (!eor && next_vec != NULL)
 			manage_row(&vec, &next_vec);
 	}
-	manage_nodes(vars->head, &vec, &next_vec, '0');
+	manage_nodes(vars->head, &vec, &next_vec);
 	while (next_vec)
 	{
 		draw_to_next_row(vec, vars->img, vars->length);
@@ -375,7 +443,7 @@ void	simple_draw(t_vars_new *vars)
 		if (!eor && next_vec != NULL)
 			manage_row(&vec, &next_vec);
 	}
-	manage_nodes(vars->head, &vec, &next_vec, 'n');
+	manage_nodes(vars->head, &vec, &next_vec);
 	while (next_vec)
 	{
 		draw_to_next_row(vec, vars->img, vars->length);
@@ -383,84 +451,46 @@ void	simple_draw(t_vars_new *vars)
 	}
 }
 
-void	rotate_operation_x(t_vars_new *vars)
+void	increase_z(t_vars_new *vars, t_vec *vec, int i)
 {
-	t_vec	*vec;
-	double	before;
-	double	after;
-
-	vec = vars->head->next;
-	before = vec->y;
-	while (vec)
+	if (vars->z_values[i] > 0)
 	{
-		rotate_around_x_custom_angle(vec, vars->angle);
-		vec = vec->next;
+		vars->z_values[i] *= 1.1;
+		vec->z = vars->z_values[i];
 	}
-	vec = vars->head->next;
-	after = vec->y;
-	while (vec)
+	else if (vars->z_values[i] < 0)
 	{
-		vec->y = vec->y + (before - after);
-		vec = vec->next;
+		vars->z_values[i] *= 1.1;
+		vec->z = vars->z_values[i];
 	}
+	else
+		vec->z = vars->z_values[i];
 }
 
-void	rotate_operation_y(t_vars_new *vars)
+void	decrease_z(t_vars_new *vars, t_vec *vec, int i)
 {
-	t_vec	*vec;
-	double	before;
-	double	after;
-
-	vec = vars->head->next;
-	before = vec->x;
-	while (vec)
+	if (vars->z_values[i] > 0)
 	{
-		rotate_around_y_custom_angle(vec, vars->angle);
-		vec = vec->next;
+		if (vars->z_values[i] / 1.1 == 0 || vars->z_values[i] / 1.1 < 0)
+			vars->z_values[i] = vars->z_values[i];
+		vars->z_values[i] /= 1.1;
+		vec->z = vars->z_values[i];
 	}
-	vec = vars->head->next;
-	after = vec->x;
-	while (vec)
+	else if (vars->z_values[i] < 0)
 	{
-		vec->x = vec->x + (before - after);
-		vec = vec->next;
+		vars->z_values[i] /= 1.1;
+		vec->z = vars->z_values[i];
 	}
+	else
+		vec->z = vars->z_values[i];
 }
 
 void	define_z_value(t_vars_new *vars, t_vec *vec, int id, int i)
 {
 	if (id == 0) // increase;
-	{
-		if (vars->z_values[i] > 0)
-		{
-			vars->z_values[i] *= 1.1;
-			vec->z = vars->z_values[i];
-		}
-		else if (vars->z_values[i] < 0)
-		{
-			vars->z_values[i] *= 1.1;
-			vec->z = vars->z_values[i];
-		}
-		else
-			vec->z = vars->z_values[i];
-	}
+		increase_z(vars, vec, i);
 	else if (id == 1) // decrease;
-	{
-		if (vars->z_values[i] > 0)
-		{
-			if (vars->z_values[i] / 1.1 == 0 || vars->z_values[i] / 1.1 < 0)
-				vars->z_values[i] = vars->z_values[i];
-			vars->z_values[i] /= 1.1;
-			vec->z = vars->z_values[i];
-		}
-		else if (vars->z_values[i] < 0)
-		{
-			vars->z_values[i] /= 1.1;
-			vec->z = vars->z_values[i];
-		}
-		else
-			vec->z = vars->z_values[i];
-	}
+		decrease_z(vars, vec, i);
 	else
 		vec->z = vars->z_values[i];
 }
@@ -485,7 +515,7 @@ void	set_initial_values(t_vars_new *vars, int id)
 	lstiter_rx(vec, &rotate_around_x);
 }
 
-void	create_new_frame(t_vars_new *vars, int id) // id defines either increase(0), decrease(1) or nothing(2);
+void	create_zoomed_frame(t_vars_new *vars)
 {
 	t_vec *vec;
 	double	before_x;
@@ -493,29 +523,31 @@ void	create_new_frame(t_vars_new *vars, int id) // id defines either increase(0)
 	double	after_x;
 	double	after_y;
 
-	set_initial_values(vars, id);
-	if (vars->zoom > 1 || vars->zoom < 1)
-	{
-		vec = vars->head->next;
-		before_x = vars->head->next->x;
-		before_y = vars->head->next->y;
-		while (vec) {
-			vec->x *= vars->zoom;
-			vec->y *= vars->zoom;
-			vec->z *= vars->zoom;
-			vec = vec->next;
-		}
-		after_x = vars->head->next->x;
-		after_y = vars->head->next->y;
-		vec = vars->head->next;
-		while (vec)
-		{
-			vec->x = vec->x - (after_x - before_x);
-			vec->y = vec->y - (after_y - before_y);
-			vec = vec->next;
-		}
-	}
 	vec = vars->head->next;
+	before_x = vars->head->next->x;
+	before_y = vars->head->next->y;
+	while (vec) {
+		vec->x *= vars->zoom;
+		vec->y *= vars->zoom;
+		vec->z *= vars->zoom;
+		vec = vec->next;
+	}
+	after_x = vars->head->next->x;
+	after_y = vars->head->next->y;
+	vec = vars->head->next;
+	while (vec)
+	{
+		vec->x = vec->x - (after_x - before_x);
+		vec->y = vec->y - (after_y - before_y);
+		vec = vec->next;
+	}
+}
+
+void	rotate_operation_y(t_vars_new *vars, t_vec *vec)
+{
+	double	before_x;
+	double	after_x;
+
 	before_x = vec->x;
 	while (vec)
 	{
@@ -532,7 +564,13 @@ void	create_new_frame(t_vars_new *vars, int id) // id defines either increase(0)
 			vec->x = vec->x + (before_x - after_x);
 		vec = vec->next;
 	}
-	vec = vars->head->next;
+}
+
+void	rotate_operation_x(t_vars_new *vars, t_vec *vec)
+{
+	double	before_y;
+	double	after_y;
+
 	before_y = vec->y;
 	while (vec)
 	{
@@ -549,13 +587,31 @@ void	create_new_frame(t_vars_new *vars, int id) // id defines either increase(0)
 			vec->y = vec->y + (before_y - after_y);
 		vec = vec->next;
 	}
-	vec = vars->head->next;
+}
+
+void	move_operation(t_vars_new *vars, t_vec *vec)
+{
 	while (vec)
 	{
 		vec->x += vars->move_x;
 		vec->y += vars->move_y;
 		vec = vec->next;
 	}
+}
+
+void	create_new_frame(t_vars_new *vars, int id) // id defines either increase(0), decrease(1) or nothing(2);
+{
+	t_vec *vec;
+
+	set_initial_values(vars, id);
+	if (vars->zoom > 1 || vars->zoom < 1)
+		create_zoomed_frame(vars);
+	vec = vars->head->next;
+	rotate_operation_y(vars, vec);
+	vec = vars->head->next;
+	rotate_operation_x(vars, vec);
+	vec = vars->head->next;
+	move_operation(vars, vec);
 }
 
 int	get_width_and_length(int argc, char **argv, t_vars_new *vars)
@@ -588,7 +644,7 @@ int	get_width_and_length(int argc, char **argv, t_vars_new *vars)
 
 void	adjust_scale(t_vars_new *vars, double *length, double *width)
 {
-	if (*length >= 500)
+	if (*length >= 600)
 	{
 		vars->scale = vars->scale / 4;
 	}
@@ -596,152 +652,171 @@ void	adjust_scale(t_vars_new *vars, double *length, double *width)
 	*width = vars->width * vars->scale;
 }
 
+void	zoom_hook(t_vars_new *vars)
+{
+	mlx_delete_image(vars->mlx, vars->img);
+	vars->img = mlx_new_image(vars->mlx, 1920, 1920);
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_EQUAL))
+		vars->zoom *= 1.1;
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_MINUS))
+		vars->zoom /= 1.1;
+	create_new_frame(vars, 2);
+	simple_draw(vars);
+	mlx_image_to_window(vars->mlx, vars->img, 0, 0);
+}
+
+void	rotate_x_hook(t_vars_new *vars)
+{
+	mlx_delete_image(vars->mlx, vars->img);
+	vars->img = mlx_new_image(vars->mlx, 1920, 1080);
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_W))
+		vars->acc_angle += vars->angle;
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_S))
+		vars->acc_angle -= vars->angle;
+	create_new_frame(vars, 2);
+	simple_draw(vars);
+	mlx_image_to_window(vars->mlx, vars->img, 0, 0);
+}
+
+void	rotate_y_hook(t_vars_new *vars)
+{
+	mlx_delete_image(vars->mlx, vars->img);
+	vars->img = mlx_new_image(vars->mlx, 1920, 1080);
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_A))
+		vars->acc_angle_y += vars->angle;
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_D))
+		vars->acc_angle_y -= vars->angle;
+	create_new_frame(vars, 2);
+	simple_draw(vars);
+	mlx_image_to_window(vars->mlx, vars->img, 0, 0);
+}
+
+void	change_z_hook(t_vars_new *vars)
+{
+	mlx_delete_image(vars->mlx, vars->img);
+	vars->img = mlx_new_image(vars->mlx, 1920, 1080);
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_1))
+		create_new_frame(vars, 0);
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_2))
+		create_new_frame(vars, 1);
+	simple_draw(vars);
+	mlx_image_to_window(vars->mlx, vars->img, 0, 0);
+}
+
+void	move_hook_sideways(t_vars_new *vars)
+{
+	mlx_delete_image(vars->mlx, vars->img);
+	vars->img = mlx_new_image(vars->mlx, 1920, 1080);
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_LEFT))
+		vars->move_x -= 10;
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_RIGHT))
+		vars->move_x += 10;
+	create_new_frame(vars, 2);
+	simple_draw(vars);
+	mlx_image_to_window(vars->mlx, vars->img, 0, 0);
+}
+
+void	move_hook_up_down(t_vars_new *vars)
+{
+	mlx_delete_image(vars->mlx, vars->img);
+	vars->img = mlx_new_image(vars->mlx, 1920, 1080);
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_UP))
+		vars->move_y -= 10;
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_DOWN))
+		vars->move_y += 10;
+	create_new_frame(vars, 2);
+	simple_draw(vars);
+	mlx_image_to_window(vars->mlx, vars->img, 0, 0);
+}
+
 void	hook(void *param)
 {
 	t_vars_new	*vars;
 
 	vars = (t_vars_new *)param;
-	if (mlx_is_key_down(vars->mlx, MLX_KEY_EQUAL))
-	{
-		mlx_delete_image(vars->mlx, vars->img);
-		vars->img = mlx_new_image(vars->mlx, 1920, 1920);
-		vars->zoom *= 1.1;
-		create_new_frame(vars, 2);
-		simple_draw(vars);
-	mlx_image_to_window(vars->mlx, vars->img, 0, 0);
-	}
 	if (mlx_is_key_down(vars->mlx, MLX_KEY_ESCAPE))
 		mlx_close_window(vars->mlx);
-	if (mlx_is_key_down(vars->mlx, MLX_KEY_MINUS))
-	{
-		mlx_delete_image(vars->mlx, vars->img);
-		vars->img = mlx_new_image(vars->mlx, 1920, 1080);
-		vars->zoom /= 1.1;
-		create_new_frame(vars, 2);
-		simple_draw(vars);
-		mlx_image_to_window(vars->mlx, vars->img, 0, 0);
-	}
-	if (mlx_is_key_down(vars->mlx, MLX_KEY_W))
-	{
-		mlx_delete_image(vars->mlx, vars->img);
-		vars->img = mlx_new_image(vars->mlx, 1920, 1080);
-		vars->acc_angle += vars->angle;
-		create_new_frame(vars, 2);
-		simple_draw(vars);
-		mlx_image_to_window(vars->mlx, vars->img, 0, 0);
-	}
-	if (mlx_is_key_down(vars->mlx, MLX_KEY_S))
-	{
-		mlx_delete_image(vars->mlx, vars->img);
-		vars->img = mlx_new_image(vars->mlx, 1920, 1080);
-		vars->acc_angle -= vars->angle;
-		create_new_frame(vars, 2);
-		simple_draw(vars);
-		mlx_image_to_window(vars->mlx, vars->img, 0, 0);
-	}
-	if (mlx_is_key_down(vars->mlx, MLX_KEY_A))
-	{
-		mlx_delete_image(vars->mlx, vars->img);
-		vars->img = mlx_new_image(vars->mlx, 1920, 1080);
-		vars->acc_angle_y += vars->angle;
-		create_new_frame(vars, 2);
-		simple_draw(vars);
-		mlx_image_to_window(vars->mlx, vars->img, 0, 0);
-	}
-	if (mlx_is_key_down(vars->mlx, MLX_KEY_D))
-	{
-		mlx_delete_image(vars->mlx, vars->img);
-		vars->img = mlx_new_image(vars->mlx, 1920, 1080);
-		vars->acc_angle_y -= vars->angle;
-		create_new_frame(vars, 2);
-		simple_draw(vars);
-		mlx_image_to_window(vars->mlx, vars->img, 0, 0);
-	}
-	if (mlx_is_key_down(vars->mlx, MLX_KEY_1))
-	{
-		mlx_delete_image(vars->mlx, vars->img);
-		vars->img = mlx_new_image(vars->mlx, 1920, 1080);
-		create_new_frame(vars, 0);
-		simple_draw(vars);
-		mlx_image_to_window(vars->mlx, vars->img, 0, 0);
-	}
-	if (mlx_is_key_down(vars->mlx, MLX_KEY_2))
-	{
-		mlx_delete_image(vars->mlx, vars->img);
-		vars->img = mlx_new_image(vars->mlx, 1920, 1080);
-		create_new_frame(vars, 1);
-		simple_draw(vars);
-		mlx_image_to_window(vars->mlx, vars->img, 0, 0);
-	}
-	if (mlx_is_key_down(vars->mlx, MLX_KEY_LEFT))
-	{
-		mlx_delete_image(vars->mlx, vars->img);
-		vars->img = mlx_new_image(vars->mlx, 1920, 1080);
-		vars->move_x -= 10;
-		create_new_frame(vars, 2);
-		simple_draw(vars);
-		mlx_image_to_window(vars->mlx, vars->img, 0, 0);
-	}
-	if (mlx_is_key_down(vars->mlx, MLX_KEY_RIGHT))
-	{
-		mlx_delete_image(vars->mlx, vars->img);
-		vars->img = mlx_new_image(vars->mlx, 1920, 1080);
-		vars->move_x += 10;
-		create_new_frame(vars, 2);
-		simple_draw(vars);
-		mlx_image_to_window(vars->mlx, vars->img, 0, 0);
-	}
-	if (mlx_is_key_down(vars->mlx, MLX_KEY_UP))
-	{
-		mlx_delete_image(vars->mlx, vars->img);
-		vars->img = mlx_new_image(vars->mlx, 1920, 1080);
-		vars->move_y -= 10;
-		create_new_frame(vars, 2);
-		simple_draw(vars);
-		mlx_image_to_window(vars->mlx, vars->img, 0, 0);
-	}
-	if (mlx_is_key_down(vars->mlx, MLX_KEY_DOWN))
-	{
-		mlx_delete_image(vars->mlx, vars->img);
-		vars->img = mlx_new_image(vars->mlx, 1920, 1080);
-		vars->move_y += 10;
-		create_new_frame(vars, 2);
-		simple_draw(vars);
-		mlx_image_to_window(vars->mlx, vars->img, 0, 0);
-	}
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_EQUAL)
+		|| mlx_is_key_down(vars->mlx, MLX_KEY_MINUS))
+		zoom_hook(vars);
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_W)
+		|| mlx_is_key_down(vars->mlx, MLX_KEY_S))
+		rotate_x_hook(vars);
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_A)
+		|| mlx_is_key_down(vars->mlx, MLX_KEY_D))
+		rotate_y_hook(vars);
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_1)
+		|| mlx_is_key_down(vars->mlx, MLX_KEY_2))
+		change_z_hook(vars);
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_LEFT)
+		|| mlx_is_key_down(vars->mlx, MLX_KEY_RIGHT))
+		move_hook_sideways(vars);
+	if (mlx_is_key_down(vars->mlx, MLX_KEY_UP)
+		|| mlx_is_key_down(vars->mlx, MLX_KEY_DOWN))
+		move_hook_up_down(vars);
+}
+
+void	allocate_value_arrays(t_vars_new *vars, int node_count)
+{
+	vars->x_values = malloc(sizeof(double) * node_count);
+	if (vars->x_values == NULL)
+		exit(1);
+	vars->y_values = malloc(sizeof(double) * node_count);
+	if (vars->y_values == NULL)
+		exit(1);
+	vars->z_values = malloc(sizeof(double) * node_count);
+	if (vars->z_values == NULL)
+		exit(1);
+}
+
+void	init_mlx(t_vars_new *vars)
+{
+	vars->mlx = mlx_init(1920, 1080, "FdF", true);
+	vars->img = mlx_new_image(vars->mlx, 1920, 1080);
+}
+
+void	start_mlx(t_vars_new *vars)
+{
+	mlx_image_to_window(vars->mlx, vars->img, 0, 0);
+	mlx_loop_hook(vars->mlx, &hook, vars);
+	mlx_loop(vars->mlx);
+}
+
+void	init_vars(t_vars_new *vars, int argc, char **argv)
+{
+	vars->scale = 20;
+	vars->argc = argc;
+	vars->argv = argv;
+	vars->i_z = 0;
+	vars->angle = 0.028;
+	vars->acc_angle = 0;
+	vars->acc_angle_y = 0;
+	vars->zoom = 1;
+	vars->move_x = 0;
+	vars->move_y = 0;
+	vars->color = 0xFFFFFF;
+}
+
+void	init_params(t_vars_new *vars)
+{
+	vars->scale = 20;
+	vars->l = vars->length * vars->scale;
+	vars->w = vars->width * vars->scale;
 }
 
 int	main(int argc, char **argv)
 {
 	t_vars_new vars_new;
-	int	node_count = 0;
+	int	node_count;
 
 	vars_new.width = get_width_and_length(argc, argv, &vars_new);
 	node_count = vars_new.width * vars_new.length;
-	printf("%d\n", node_count);
-	vars_new.y_values = malloc(sizeof(double) * node_count);
-	vars_new.x_values = malloc(sizeof(double) * node_count);
-	vars_new.z_values = malloc(sizeof(double) * node_count);
-	vars_new.mlx = mlx_init(1920, 1080, "FdF", true);
-	vars_new.img = mlx_new_image(vars_new.mlx, 1920, 1080);
-	vars_new.scale = 20;
-	vars_new.l = vars_new.length * vars_new.scale;
-	vars_new.w = vars_new.width * vars_new.scale;
+	allocate_value_arrays(&vars_new, node_count);
+	init_mlx(&vars_new);
+	init_params(&vars_new);
+	init_vars(&vars_new, argc, argv);
 	adjust_scale(&vars_new, &vars_new.l, &vars_new.w);
-	vars_new.argc = argc;
-	vars_new.argv = argv;
-	vars_new.i_z = 0;
-	vars_new.angle = 0.028;
-	vars_new.acc_angle = 0;
-	vars_new.angle_y = 0.028;
-	vars_new.acc_angle_y = 0;
-	vars_new.zoom = 1;
-	vars_new.index = 0;
-	vars_new.move_x = 0;
-	vars_new.move_y = 0;
 	draw_map(&vars_new, argc, argv);
-	mlx_image_to_window(vars_new.mlx, vars_new.img, 0, 0);
-	mlx_loop_hook(vars_new.mlx, &hook, &vars_new);
-	mlx_loop(vars_new.mlx);
+	start_mlx(&vars_new);
 	return (0);
 }

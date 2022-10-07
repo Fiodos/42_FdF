@@ -6,7 +6,7 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/07/01 13:53:28 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/10/06 15:52:18 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/10/07 19:04:51 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,20 +38,28 @@ t_vec	*lstlast(t_vec *lst)
 	return (curr);
 }
 
-void	lstadd_back(t_vec **lst, t_vec *new)
-{
-	t_vec	*last;
+// void	lstadd_back(t_vec **lst, t_vec *new)
+// {
+// 	t_vec	*last;
 
-	if (*lst == 0)
-	{
-		*lst = new;
-		new->next = NULL;
-		return ;
-	}
-	last = lstlast(*lst);
-	last->next = new;
-	new = lstlast(new);
-	new->next = NULL;
+// 	if (*lst == 0)
+// 	{
+// 		*lst = new;
+// 		new->next = NULL;
+// 		return ;
+// 	}
+// 	last = lstlast(*lst);
+// 	last->next = new;
+// 	new = lstlast(new);
+// 	new->next = NULL;
+// }
+
+void	lstadd_back(t_vec **tmp, t_vec **next, t_vars_new *vars)
+{
+	(*next)->color = vars->color;
+	(*tmp)->next = *next;
+	*tmp = *next;
+	vars->length++;
 }
 
 void	lstiter(t_vec *lst, void (*f)(t_vec *, int, int))

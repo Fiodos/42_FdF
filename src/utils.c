@@ -6,7 +6,7 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/10/08 18:55:26 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/10/09 12:08:07 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/10/09 13:26:52 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,8 @@ void	adjust_scale(t_vars_new *vars, double *length, double *width)
 {
 	if (*length >= 600)
 		vars->scale = vars->scale / 4;
+	if (*length >= 10000)
+		vars->scale = 2;
 	*length = vars->length * vars->scale;
 	*width = vars->width * vars->scale;
 }

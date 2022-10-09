@@ -1,16 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   utils.c                                            :+:      :+:    :+:   */
+/*   node_utils.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/07/01 13:53:28 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/10/07 19:04:51 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/10/09 12:10:30 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "lib/fdf.h"
+#include "../lib/fdf.h"
 
 t_vec	*new_vec(int x, int y, int z)
 {
@@ -38,36 +38,23 @@ t_vec	*lstlast(t_vec *lst)
 	return (curr);
 }
 
-// void	lstadd_back(t_vec **lst, t_vec *new)
-// {
-// 	t_vec	*last;
-
-// 	if (*lst == 0)
-// 	{
-// 		*lst = new;
-// 		new->next = NULL;
-// 		return ;
-// 	}
-// 	last = lstlast(*lst);
-// 	last->next = new;
-// 	new = lstlast(new);
-// 	new->next = NULL;
-// }
-
 void	lstadd_back(t_vec **tmp, t_vec **next, t_vars_new *vars)
 {
 	(*next)->color = vars->color;
 	(*tmp)->next = *next;
 	*tmp = *next;
 	vars->length++;
+	vars->color = WHITE;
 }
 
 void	lstiter(t_vec *lst, void (*f)(t_vec *, int, int))
 {
 	t_vec	*curr;
-	int	x = 1920 / 2;
-	int	y = 1080 / 2;
+	int		x;
+	int		y;
 
+	x = WIDTH / 2;
+	y = HEIGHT / 2;
 	curr = lst;
 	while (curr != NULL)
 	{

@@ -6,31 +6,42 @@
 #    By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/06/25 14:46:34 by fyuzhyk           #+#    #+#              #
-#    Updated: 2022/10/06 13:55:10 by fyuzhyk          ###   ########.fr        #
+#    Updated: 2022/10/09 12:19:29 by fyuzhyk          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
-NAME = main
+NAME = fdf
 
-SRC_DIR = mlx
+LIBFT_DIR = lib/libft
+MLX_DIR = lib/MLX42
+SRC_DIR = src
+LIB = fdf.a
 
-SRC = $(wildcard $(SRC_DIR)/*.c)
-OBJ = $(SRC:$(SRC_DIR)/%.c=$(SRC_DIR)/%.o)
+LIBFT = $(LIBFT_DIR)/libft.a
+MLX = $(MLX_DIR)/libmlx42.a
 
-all: $(NAME)
+CFLAGS = -Wall -Wextra -Werror
 
-# $(NAME): $(OBJ)
-# 	$(CC) $(OBJ) libft/libft.a -Lmlx -lmlx -framework OpenGL -framework AppKit -o $(NAME)
+SRC = src/bresenham.c src/create_frame.c src/draw.c src/free.c src/abs.c src/hooks.c src/init_mlx.c src/init_values.c src/input_parsing.c\
+src/main.c src/move_zoom_hooks.c src/node_management.c src/node_utils.c src/operations.c src/rotations.c src/utils.c src/z_manipulation.c
 
-$(NAME): $(OBJ)
-	$(CC) $(OBJ) MLX42/libmlx42.a libft/libft.a -I include -lglfw -L "/Users/$(USER)/.brew/opt/glfw/lib/" -o $(NAME)
+OBJ = $(SRC:%.c=%.o)
 
+all : $(NAME)
+
+$(NAME) : $(OBJ) $(LIB)
+	$(CC) $(CFLAGS) $(OBJ) $(LIB) $(LIBFT) $(MLX) -I include -lglfw -L "/Users/$(USER)/.brew/opt/glfw/lib/" -o $(NAME)
+
+$(LIB) : $(OBJ)
+	Make -C $(LIBFT_DIR)
+	Make -C $(MLX_DIR)
+	ar rc $(LIB) $(OBJ)
 
 %.o: %.c
-	$(CC) -Wall -Wextra -Werror -Imlx -c $< -o $@
+	$(CC) -c $(CFLAGS) -Imlx -c $< -o $@
 
 fclean: clean
-	rm -f $(NAME)
+	rm -f $(NAME) $(LIBFT_DIR)/*.o $(LIBFT_DIR)/libft.a $(MLX_DIR)/libmlx42.a $(LIB)
 
 clean:
 	rm -f $(OBJ)

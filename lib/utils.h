@@ -6,7 +6,7 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/10/08 19:34:09 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/10/08 19:35:04 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/10/17 10:31:08 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,15 +47,19 @@ void	get_width_and_length(int argc, char **argv, t_vars_new *vars);
 
 void	define_z_value(t_vars_new *vars, t_vec *vec, int id, int i);
 
+void	error_handler(t_vars_new *vars, char **split, char *line);
+
 int		hex_to_decimal(const char *color);
 
-int		ft_atoi_fdf(const char *str, t_vars_new *vars);
+int		ft_atoi_fdf(char **split, t_vars_new *vars, char *line);
 
 int		open_file(int argc, char **argv);
 
 int		check_range(int x, int y);
 
-int		get_z(t_vars_new *vars, char **split);
+int		get_z(t_vars_new *vars, char **split, char *line);
+
+char	*get_next_line_fdf(int fd);
 
 t_vec	*create_list(int fd, t_vars_new *vars, int x, int y);
 

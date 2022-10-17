@@ -6,18 +6,18 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/10/08 18:52:01 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/10/09 15:45:13 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/10/17 10:31:49 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../lib/fdf.h"
 #include "../lib/utils.h"
 
-int	get_z(t_vars_new *vars, char **split)
+int	get_z(t_vars_new *vars, char **split, char *line)
 {
 	int	z;
 
-	z = ft_atoi_fdf(split[vars->length], vars);
+	z = ft_atoi_fdf(split, vars, line);
 	if (z > 30 || z < -30)
 		z *= 2;
 	else

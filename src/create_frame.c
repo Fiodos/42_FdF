@@ -6,7 +6,7 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/10/08 18:59:52 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/10/09 10:42:47 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/10/17 10:21:46 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,29 +25,28 @@ t_vec	*create_list(int fd, t_vars_new *vars, int x, int y)
 {
 	char	*line;
 	char	**ps;
-	t_vec	*vec;
 	t_vec	*next;
 	t_vec	*tmp;
 
-	vec = new_vec(x, y, 0);
-	tmp = vec;
-	line = get_next_line(fd);
+	vars->head = new_vec(x, y, 0);
+	tmp = vars->head;
+	line = get_next_line_fdf(fd);
 	while (line)
 	{
 		vars->length = 0;
 		ps = ft_split(line, ' ');
 		while (ps[vars->length])
 		{
-			next = new_vec(x, y, get_z(vars, ps));
+			next = new_vec(x, y, get_z(vars, ps, line));
 			lstadd_back(&tmp, &next, vars);
 			x += vars->scale;
 		}
 		free_split_line(ps, line);
 		reset_coordinates(&x, &y, vars);
-		line = get_next_line(fd);
+		line = get_next_line_fdf(fd);
 	}
 	close(fd);
-	return (vec);
+	return (vars->head);
 }
 
 void	create_zoomed_frame(t_vars_new *vars)

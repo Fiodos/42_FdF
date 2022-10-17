@@ -6,7 +6,7 @@
 #    By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/06/25 14:46:34 by fyuzhyk           #+#    #+#              #
-#    Updated: 2022/10/09 16:20:21 by fyuzhyk          ###   ########.fr        #
+#    Updated: 2022/10/17 10:32:21 by fyuzhyk          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -24,7 +24,7 @@ CFLAGS = -Wall -Wextra -Werror
 
 SRC = src/bresenham.c src/create_frame.c src/draw.c src/free.c src/abs.c src/hooks.c src/init_mlx.c src/init_values.c src/input_parsing.c\
 src/main.c src/move_zoom_hooks.c src/node_management.c src/node_utils.c src/operations.c src/rotations.c src/utils.c src/z_manipulation.c\
-src/draw_decoration.c
+src/draw_decoration.c src/get_next_line_fdf.c src/error_handler.c
 
 OBJ = $(SRC:%.c=%.o)
 

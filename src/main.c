@@ -6,7 +6,7 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/06/25 14:48:24 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/10/09 16:22:51 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/10/17 10:19:33 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,5 +34,7 @@ int	main(int argc, char **argv)
 	draw_decoration(&vars);
 	start_mlx(&vars);
 	free_all(vars.head->next, &vars);
+	mlx_delete_image(vars.mlx, vars.img);
+	mlx_terminate(vars.mlx);
 	return (0);
 }

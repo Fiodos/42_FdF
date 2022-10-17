@@ -6,11 +6,12 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/10/08 18:57:07 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/10/08 20:40:36 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/10/17 10:30:44 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../lib/fdf.h"
+#include "../lib/utils.h"
 
 int	hex_to_decimal(const char *color)
 {
@@ -38,7 +39,7 @@ int	hex_to_decimal(const char *color)
 	return (converted_color);
 }
 
-int	ft_atoi_fdf(const char *str, t_vars_new *vars)
+int	ft_atoi_fdf(char **split, t_vars_new *vars, char *line)
 {
 	int	i;
 	int	minus_count;
@@ -47,22 +48,22 @@ int	ft_atoi_fdf(const char *str, t_vars_new *vars)
 	i = 0;
 	minus_count = 1;
 	num = 0;
-	while (str[i] == '\r' || str[i] == '\t' || str[i] == ' '
-		|| str[i] == '\f' || str[i] == '\v' || str[i] == '\n')
+	while (split[vars->length][i] == '\r' || split[vars->length][i] == '\t'
+		|| split[vars->length][i] == ' ' || split[vars->length][i] == '\f'
+		|| split[vars->length][i] == '\v' || split[vars->length][i] == '\n')
 		i++;
-	if (str[i] == '-')
+	if (split[vars->length][i] == '-')
 	{
 		minus_count *= (-1);
 		i++;
 	}
-	else if (str[i] == '+')
+	else if (split[vars->length][i] == '+')
 		i++;
-	while (str[i] <= '9' && str[i] >= '0')
-	{
-		num = (str[i] - '0') + (num * 10);
-		i++;
-	}
-	if (str[i] == ',')
-		vars->color = hex_to_decimal(&str[i + 3]);
+	while (split[vars->length][i] <= '9' && split[vars->length][i] >= '0')
+		num = (split[vars->length][i++] - '0') + (num * 10);
+	if (split[vars->length][i] == ',')
+		vars->color = hex_to_decimal(&split[vars->length][i + 3]);
+	if (i == 0 && num == 0)
+		error_handler(vars, split, line);
 	return (num * minus_count);
 }

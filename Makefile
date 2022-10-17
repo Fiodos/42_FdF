@@ -6,7 +6,7 @@
 #    By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/06/25 14:46:34 by fyuzhyk           #+#    #+#              #
-#    Updated: 2022/10/09 12:19:29 by fyuzhyk          ###   ########.fr        #
+#    Updated: 2022/10/09 16:20:21 by fyuzhyk          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -23,7 +23,8 @@ MLX = $(MLX_DIR)/libmlx42.a
 CFLAGS = -Wall -Wextra -Werror
 
 SRC = src/bresenham.c src/create_frame.c src/draw.c src/free.c src/abs.c src/hooks.c src/init_mlx.c src/init_values.c src/input_parsing.c\
-src/main.c src/move_zoom_hooks.c src/node_management.c src/node_utils.c src/operations.c src/rotations.c src/utils.c src/z_manipulation.c
+src/main.c src/move_zoom_hooks.c src/node_management.c src/node_utils.c src/operations.c src/rotations.c src/utils.c src/z_manipulation.c\
+src/draw_decoration.c
 
 OBJ = $(SRC:%.c=%.o)
 

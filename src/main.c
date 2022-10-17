@@ -6,7 +6,7 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/06/25 14:48:24 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/10/09 12:11:20 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/10/09 16:22:51 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@ int	main(int argc, char **argv)
 	adjust_scale(&vars, &vars.l_scaled, &vars.w_scaled);
 	draw_map(&vars, argc, argv);
 	mlx_key_hook(vars.mlx, &change_projection_hook, &vars);
+	draw_decoration(&vars);
 	start_mlx(&vars);
 	free_all(vars.head->next, &vars);
 	return (0);

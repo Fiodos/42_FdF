@@ -6,7 +6,7 @@
 /*   By: fyuzhyk <fyuzhyk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/10/08 19:06:12 by fyuzhyk           #+#    #+#             */
-/*   Updated: 2022/10/09 12:24:41 by fyuzhyk          ###   ########.fr       */
+/*   Updated: 2022/10/09 16:20:07 by fyuzhyk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,12 @@ void	draw_to_next_row(t_vec *vec, mlx_image_t *img, int length);
 void	draw_map(t_vars_new *vars, int argc, char **argv);
 
 void	simple_draw(t_vars_new *vars);
+
+void	draw_menu(t_vars_new *vars);
+
+void	draw_42(t_vars_new *vars);
+
+void	draw_decoration(t_vars_new *vars);
 
 int		get_dx(t_vec *vec, t_vec *next_vec);
 

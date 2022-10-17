@@ -86,7 +86,7 @@ t_vec	*create_default_frame(t_vars_new *vars, int argc, char **argv)
 	int		y;
 
 	fd = open_file(argc, argv);
-	x = (1920 / 2);
+	x = (WIDTH / 2);
 	y = (HEIGHT / 2);
 	vec = create_list(fd, vars, x, y);
 	init_pos_list(vec, vars);

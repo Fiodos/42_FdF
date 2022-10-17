@@ -15,11 +15,11 @@
 
 int	hex_to_decimal(const char *color)
 {
-	char	*new_color;
-	int		converted_color;
-	int		index;
-	int		len;
-	int		i;
+	char		*new_color;
+	long		converted_color;
+	int			index;
+	int			len;
+	int			i;
 
 	converted_color = 0;
 	new_color = ft_strjoin(color, "FF");
@@ -36,7 +36,7 @@ int	hex_to_decimal(const char *color)
 		i++;
 	}
 	free(new_color);
-	return (converted_color);
+	return ((int)converted_color);
 }
 
 int	ft_atoi_fdf(char **split, t_vars_new *vars, char *line)

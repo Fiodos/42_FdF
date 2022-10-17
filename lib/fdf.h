@@ -23,8 +23,8 @@
 # include "MLX42/include/MLX42/MLX42.h"
 
 # define PI 3.142
-# define WIDTH 1920
-# define HEIGHT 1080
+# define WIDTH 1280
+# define HEIGHT 700
 # define WHITE 0xF0FFFFFF
 
 typedef struct s_vec

@@ -26,13 +26,13 @@ void	draw_menu(t_vars_new *vars)
 
 void	draw_42(t_vars_new *vars)
 {
-	mlx_put_string(vars->mlx, "        :::      ::::::::", 20, 900);
-	mlx_put_string(vars->mlx, "      :+:      :+:    :+:", 20, 920);
-	mlx_put_string(vars->mlx, "    +:+ +:+         +:+", 20, 940);
-	mlx_put_string(vars->mlx, "  +#+  +:+       +#+", 20, 960);
-	mlx_put_string(vars->mlx, "+#+#+#+#+#+   +#+        ", 20, 980);
-	mlx_put_string(vars->mlx, "     #+#    #+#          ", 20, 1000);
-	mlx_put_string(vars->mlx, "     ###   ########.HN    ", 20, 1020);
+	mlx_put_string(vars->mlx, "        :::      ::::::::", 20, 500);
+	mlx_put_string(vars->mlx, "      :+:      :+:    :+:", 20, 520);
+	mlx_put_string(vars->mlx, "    +:+ +:+         +:+", 20, 540);
+	mlx_put_string(vars->mlx, "  +#+  +:+       +#+", 20, 560);
+	mlx_put_string(vars->mlx, "+#+#+#+#+#+   +#+        ", 20, 580);
+	mlx_put_string(vars->mlx, "     #+#    #+#          ", 20, 600);
+	mlx_put_string(vars->mlx, "     ###   ########.HN    ", 20, 620);
 }
 
 void	draw_decoration(t_vars_new *vars)

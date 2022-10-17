@@ -31,7 +31,7 @@ OBJ = $(SRC:%.c=%.o)
 all : $(NAME)
 
 $(NAME) : $(OBJ) $(LIB)
-	$(CC) $(CFLAGS) $(OBJ) $(LIB) $(LIBFT) $(MLX) -I include -lglfw -L "/Users/$(USER)/.brew/opt/glfw/lib/" -o $(NAME)
+	$(CC) $(CFLAGS) $(OBJ) $(LIB) $(LIBFT) $(MLX) -I include -lglfw -L /opt/homebrew/Cellar/glfw/3.3.8/lib/ -o $(NAME)
 
 $(LIB) : $(OBJ)
 	Make -C $(LIBFT_DIR)

@@ -35,9 +35,7 @@ void	free_split_line(char **ps, char *line)
 void	free_all(t_vec *vec, t_vars_new *vars)
 {
 	t_vec	*tmp;
-	int		i;
 
-	i = 0;
 	while (vec != NULL)
 	{
 		tmp = vec;

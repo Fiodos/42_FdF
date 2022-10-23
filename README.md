@@ -5,3 +5,5 @@ As the name suggests, in this project one had to code a program, which can trans
 interactive 3D representation.
 
 (FDF is short for ’fil de fer’ in French which means ’wireframe model’)
+
+[![Screenshot-2022-10-23-at-18-55-17.png](https://i.postimg.cc/hjmhpSZX/Screenshot-2022-10-23-at-18-55-17.png)](https://postimg.cc/Fd99KQ4v)

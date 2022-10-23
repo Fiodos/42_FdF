@@ -8,5 +8,6 @@ interactive 3D representation.
 
 
 A screenshot of the programs execution.
+
 Input: t1.fdf (inside test_maps).
 [![Screenshot-2022-10-23-at-18-55-17.png](https://i.postimg.cc/hjmhpSZX/Screenshot-2022-10-23-at-18-55-17.png)](https://postimg.cc/Fd99KQ4v)
